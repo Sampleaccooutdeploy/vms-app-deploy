@@ -7,6 +7,35 @@
     margin-bottom: 2rem;
 }
 
+.backBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    text-decoration: none;
+}
+
+.backBtn:hover {
+    background: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+    transform: translateX(-2px);
+}
+
+:global(:root.dark) .backBtn:hover {
+    background: var(--secondary-color);
+    border-color: var(--secondary-color);
+    color: #1a1a1a;
+}
+
 .subtitle {
     color: var(--text-secondary);
     font-size: 1.1rem;
@@ -39,12 +68,13 @@
 }
 
 .card {
+    position: relative;
     background: var(--surface-color);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     overflow: hidden;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    transition: transform 0.2s;
+    transition: transform 0.2s, opacity 0.2s;
 }
 
 .card:hover {
@@ -111,6 +141,36 @@
     padding: 1rem 1.5rem;
     background-color: var(--surface-color);
     border-top: 1px solid var(--border-color);
+}
+
+/* Card loading overlay when approving */
+.cardApproving {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.cardLoadingOverlay {
+    position: absolute;
+    inset: 0;
+    z-index: 5;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(2px);
+    border-radius: var(--radius-lg);
+    color: var(--primary-color);
+    font-size: 0.88rem;
+    font-weight: 600;
+}
+
+:global(:root.dark) .cardLoadingOverlay {
+    background: rgba(30, 30, 30, 0.85);
+    color: var(--secondary-color);
 }
 
 /* Tabs */
@@ -223,14 +283,60 @@
 }
 
 /* Dark mode overrides */
-@media (prefers-color-scheme: dark) {
-    .card {
-        background: var(--surface-color);
-    }
+:global(:root.dark) .card {
+    background: var(--surface-color);
+}
 
-    .cardFooter {
-        background-color: var(--background-color);
-    }
+:global(:root.dark) .cardFooter {
+    background-color: var(--background-color);
+}
+
+/* ─── Department Analytics ─── */
+.analyticsSection {
+    margin-bottom: 2rem;
+}
+
+.deptStatsGrid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.875rem;
+    margin-bottom: 1.25rem;
+}
+
+.deptStatCard {
+    border-left: 4px solid var(--primary-color);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.deptStatCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.deptStatContent {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.85rem 1rem !important;
+}
+
+.deptStatLabel {
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.deptStatValue {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text-primary);
+}
+
+.deptChartCard {
+    margin-bottom: 0;
 }
 
 /* Modal Styles */
@@ -263,7 +369,7 @@
     height: 80px;
     border-radius: 50%;
     object-fit: cover;
-    border: 3px solid white;
+    border: 3px solid var(--border-color);
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
@@ -280,8 +386,10 @@
 }
 
 .profileItem label {
-    display: block;
-    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-size: 0.8rem;
     color: var(--text-muted);
     margin-bottom: 0.25rem;
     text-transform: uppercase;
@@ -293,6 +401,116 @@
     font-size: 1rem;
     color: var(--text-primary);
     font-weight: 500;
+    word-break: break-word;
+}
+
+/* Profile icon inside label */
+.profileIcon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: var(--secondary-color);
+}
+
+/* UID inline badge in profile header */
+.uidBadgeInline {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 0.35rem;
+    padding: 0.2rem 0.6rem;
+    font-size: 0.78rem;
+    font-weight: 700;
+    font-family: "Courier New", monospace;
+    letter-spacing: 0.5px;
+    color: var(--primary-color);
+    background: rgba(0, 51, 102, 0.06);
+    border-radius: 6px;
+    border: 1px solid rgba(0, 51, 102, 0.12);
+}
+
+/* Status banner */
+.statusBanner {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.6rem 1rem;
+    border-radius: var(--radius-md);
+    font-size: 0.88rem;
+    font-weight: 500;
+}
+
+.status_pending {
+    background: #FFF8E1;
+    color: #B7791F;
+    border: 1px solid #F6E05E;
+}
+
+.status_approved {
+    background: #F0FFF4;
+    color: #276749;
+    border: 1px solid #9AE6B4;
+}
+
+.status_rejected {
+    background: #FFF5F5;
+    color: #C53030;
+    border: 1px solid #FEB2B2;
+}
+
+.status_checked_in {
+    background: #EBF8FF;
+    color: #2B6CB0;
+    border: 1px solid #90CDF4;
+}
+
+.status_checked_out {
+    background: #FAF5FF;
+    color: #6B46C1;
+    border: 1px solid #D6BCFA;
+}
+
+/* Dark mode overrides for status banner */
+:global(:root.dark) .status_pending {
+    background: rgba(246, 224, 94, 0.1);
+    color: #fcd34d;
+    border-color: rgba(246, 224, 94, 0.25);
+}
+
+:global(:root.dark) .status_approved {
+    background: rgba(72, 187, 120, 0.1);
+    color: #86efac;
+    border-color: rgba(72, 187, 120, 0.25);
+}
+
+:global(:root.dark) .status_rejected {
+    background: rgba(245, 101, 101, 0.1);
+    color: #fca5a5;
+    border-color: rgba(245, 101, 101, 0.25);
+}
+
+:global(:root.dark) .status_checked_in {
+    background: rgba(66, 153, 225, 0.1);
+    color: #93c5fd;
+    border-color: rgba(66, 153, 225, 0.25);
+}
+
+:global(:root.dark) .status_checked_out {
+    background: rgba(159, 122, 234, 0.1);
+    color: #c4b5fd;
+    border-color: rgba(159, 122, 234, 0.25);
+}
+
+:global(:root.dark) .uidBadgeInline {
+    color: var(--secondary-color);
+    background: rgba(255, 153, 51, 0.1);
+    border-color: rgba(255, 153, 51, 0.2);
+}
+
+/* Approved badge dark mode */
+:global(:root.dark) .approvedBadge {
+    color: #86efac;
+    background: rgba(22, 163, 74, 0.1);
 }
 
 .modalActions {
@@ -302,4 +520,119 @@
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
+    flex-wrap: wrap;
+}
+
+/* Department Dashboard Responsive */
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+        padding: 1rem 0;
+    }
+
+    .requestGrid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .tabs {
+        flex-wrap: wrap;
+        gap: 0.25rem;
+    }
+
+    .tab {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.85rem;
+        flex: 1;
+        text-align: center;
+    }
+
+    .filterBar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .searchWrapper {
+        max-width: 100%;
+    }
+
+    .profileHeader {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+
+    .profileGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .profileGrid > div[style*="gridColumn"] {
+        grid-column: span 1 !important;
+    }
+
+    .modalActions {
+        flex-direction: column;
+    }
+
+    .modalActions button,
+    .modalActions form {
+        width: 100%;
+    }
+
+    .cardHeader {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .cardBody {
+        padding: 1rem;
+    }
+
+    .cardFooter {
+        padding: 0.75rem 1rem;
+    }
+
+    .emptyState {
+        padding: 2rem 1rem;
+    }
+
+    .deptStatsGrid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .header h1 {
+        font-size: 1.3rem;
+    }
+
+    .subtitle {
+        font-size: 0.95rem;
+    }
+
+    .visitorPhoto {
+        width: 50px;
+        height: 50px;
+    }
+
+    .largePhoto {
+        width: 60px;
+        height: 60px;
+    }
+
+    .profileHeader h2 {
+        font-size: 1.2rem;
+    }
+
+    .deptStatsGrid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.625rem;
+    }
+
+    .deptStatValue {
+        font-size: 1.25rem;
+    }
 }

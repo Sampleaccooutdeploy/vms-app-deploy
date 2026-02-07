@@ -5,24 +5,27 @@ import { createUser, deleteUser, getUsers } from "@/app/actions/users";
 import { getPasswordResetRequests, processPasswordReset } from "@/app/actions/password";
 import { logout } from "@/app/actions/auth";
 import styles from "./page.module.css";
-// import styles from "@/app/admin/dept/page.module.css"; // Reuse or create new
-
-const DEPARTMENTS = [
-    "CSE", "ECE", "EEE", "MECH", "CIVIL", "IT", "EIE", "ADMINISTRATION", "LIBRARY", "HOSTEL"
-];
+import { CustomDialog } from "@/components/ui/CustomDialog";
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/Card";
+import { DEPARTMENTS } from "@/lib/constants";
+import type { Profile, PasswordResetRequest } from "@/lib/types";
+import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 
 export default function SuperAdminDashboard() {
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
     const formRef = useRef<HTMLFormElement>(null);
     const [selectedRole, setSelectedRole] = useState("department_admin");
     const [loading, setLoading] = useState(false);
-    const [users, setUsers] = useState<any[]>([]);
-    const [refreshKey, setRefreshKey] = useState(0); // To trigger re-fetch
+    const [users, setUsers] = useState<Profile[]>([]);
+    const [refreshKey, setRefreshKey] = useState(0);
 
     // Password reset state
-    const [passwordRequests, setPasswordRequests] = useState<any[]>([]);
+    const [passwordRequests, setPasswordRequests] = useState<PasswordResetRequest[]>([]);
     const [newPasswords, setNewPasswords] = useState<{ [key: string]: string }>({});
     const [processingId, setProcessingId] = useState<string | null>(null);
+
+    // Confirm dialog state
+    const [confirmDialog, setConfirmDialog] = useState<{ open: boolean; userId: string; email: string }>({ open: false, userId: "", email: "" });
 
     useEffect(() => {
         fetchUsers();
@@ -61,8 +64,13 @@ export default function SuperAdminDashboard() {
         setLoading(false);
     };
 
-    const handleDeleteUser = async (userId: string) => {
-        if (!confirm("Are you sure you want to delete this user?")) return;
+    const handleDeleteUser = async (userId: string, email: string) => {
+        setConfirmDialog({ open: true, userId, email });
+    };
+
+    const confirmDeleteUser = async () => {
+        const userId = confirmDialog.userId;
+        setConfirmDialog({ open: false, userId: "", email: "" });
 
         // Optimistic update
         setUsers(prev => prev.filter(u => u.id !== userId));
@@ -103,12 +111,15 @@ export default function SuperAdminDashboard() {
     return (
         <div className="container">
             <header className={styles.header}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flex: 1, flexWrap: 'wrap' as const }}>
+                    <a href="/" className={styles.backBtn} title="Go back">
+                        <ArrowLeftIcon style={{ width: 20, height: 20 }} />
+                    </a>
                     <h1 style={{ margin: 0 }}>Super Admin</h1>
                     <span className="badge badge-primary">User Management</span>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' as const }}>
                     <a href="/admin/super/analytics" className="btn btn-outline">
                         View Analytics
                     </a>
@@ -121,8 +132,12 @@ export default function SuperAdminDashboard() {
             </header>
 
             <div className={styles.grid}>
-                <div className={styles.formSection}>
-                    <h2>Create New User</h2>
+                <Card variant="default">
+                    <CardHeader>
+                        <CardTitle>Create New User</CardTitle>
+                        <CardDescription>Add department admins or security staff</CardDescription>
+                    </CardHeader>
+                    <CardContent>
                     {message && (
                         <div className={`${styles.message} ${message.type === 'error' ? styles.error : styles.success}`}>
                             {message.text}
@@ -166,10 +181,15 @@ export default function SuperAdminDashboard() {
                             {loading ? "Creating..." : "Create User"}
                         </button>
                     </form>
-                </div>
+                    </CardContent>
+                </Card>
 
-                <div className={styles.logsSection}>
-                    <h2>Existing Users</h2>
+                <Card variant="default">
+                    <CardHeader>
+                        <CardTitle>Existing Users</CardTitle>
+                        <CardDescription>Manage registered accounts</CardDescription>
+                    </CardHeader>
+                    <CardContent>
                     {users.length === 0 ? (
                         <p className={styles.placeholder}>No users found.</p>
                     ) : (
@@ -192,7 +212,7 @@ export default function SuperAdminDashboard() {
                                             <td style={{ padding: '0.5rem' }}>
                                                 {user.role !== 'super_admin' && (
                                                     <button
-                                                        onClick={() => handleDeleteUser(user.id)}
+                                                        onClick={() => handleDeleteUser(user.id, user.email || "unknown")}
                                                         className="btn btn-outline"
                                                         style={{ padding: '0.25rem 0.5rem', fontSize: '0.8rem', borderColor: 'red', color: 'red' }}
                                                     >
@@ -206,11 +226,12 @@ export default function SuperAdminDashboard() {
                             </table>
                         </div>
                     )}
-                </div>
+                    </CardContent>
+                </Card>
 
                 {/* Password Reset Requests Section - Professional Design */}
                 {passwordRequests.length > 0 && (
-                    <div className={styles.resetSection}>
+                    <Card variant="default" className={styles.resetSection}>
                         <div className={styles.resetHeader}>
                             <div className={styles.resetTitleGroup}>
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className={styles.resetIcon}>
@@ -289,9 +310,22 @@ export default function SuperAdminDashboard() {
                                 </div>
                             ))}
                         </div>
-                    </div>
+                    </Card>
                 )}
             </div>
+
+            {/* Delete Confirmation Dialog */}
+            <CustomDialog
+                open={confirmDialog.open}
+                onOpenChange={(open) => !open && setConfirmDialog({ open: false, userId: "", email: "" })}
+                title="Confirm Delete"
+                description={`Are you sure you want to delete user "${confirmDialog.email}"? This action cannot be undone.`}
+            >
+                <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.5rem', justifyContent: 'flex-end' }}>
+                    <button className="btn btn-outline" onClick={() => setConfirmDialog({ open: false, userId: "", email: "" })}>Cancel</button>
+                    <button className="btn btn-danger" onClick={confirmDeleteUser} style={{ backgroundColor: 'var(--error-color)', color: 'white', borderColor: 'var(--error-color)' }}>Delete User</button>
+                </div>
+            </CustomDialog>
         </div>
     );
 }

@@ -15,20 +15,22 @@ const overlayStyle: React.CSSProperties = {
 };
 
 const contentStyle: React.CSSProperties = {
-    backgroundColor: "white",
+    backgroundColor: "var(--surface-color)",
     borderRadius: "8px",
     boxShadow: "0 10px 38px -10px rgba(22, 23, 24, 0.35), 0 10px 20px -15px rgba(22, 23, 24, 0.2)",
     position: "fixed",
     top: "50%",
     left: "50%",
     transform: "translate(-50%, -50%)",
-    width: "90vw",
-    maxWidth: "500px", // Increased width for better read
+    width: "calc(100vw - 2rem)",
+    maxWidth: "500px",
     maxHeight: "85vh",
     padding: "24px",
     zIndex: 51,
     animation: "contentShow 150ms cubic-bezier(0.16, 1, 0.3, 1)",
-    border: "1px solid #e2e8f0"
+    border: "1px solid var(--border-color)",
+    overflowY: "auto" as const,
+    boxSizing: "border-box" as const,
 };
 
 const titleStyle: React.CSSProperties = {
@@ -37,14 +39,14 @@ const titleStyle: React.CSSProperties = {
     fontWeight: 600,
     fontSize: "1.25rem",
     lineHeight: 1.2,
-    color: "#1a202c"
+    color: "var(--text-primary)"
 };
 
 const descStyle: React.CSSProperties = {
     margin: "10px 0 20px",
     fontSize: "1rem", // slightly larger for readability
     lineHeight: 1.5,
-    color: "#4a5568"
+    color: "var(--text-secondary)"
 };
 
 const closeBtnStyle: React.CSSProperties = {
@@ -56,7 +58,7 @@ const closeBtnStyle: React.CSSProperties = {
     cursor: "pointer",
     padding: "4px",
     borderRadius: "4px",
-    color: "#a0aec0",
+    color: "var(--text-muted)",
     display: "flex", // for centering icon
     alignItems: "center",
     justifyContent: "center"

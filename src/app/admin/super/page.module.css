@@ -7,6 +7,35 @@
     margin-bottom: 2rem;
 }
 
+.backBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: var(--surface-color);
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    text-decoration: none;
+}
+
+.backBtn:hover {
+    background: var(--primary-color);
+    color: #fff;
+    border-color: var(--primary-color);
+    transform: translateX(-2px);
+}
+
+:global(:root.dark) .backBtn:hover {
+    background: var(--secondary-color);
+    border-color: var(--secondary-color);
+    color: #1a1a1a;
+}
+
 .grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -16,6 +45,46 @@
 @media (max-width: 768px) {
     .grid {
         grid-template-columns: 1fr;
+    }
+
+    .header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+        padding: 1rem 0;
+    }
+
+    .formSection,
+    .logsSection {
+        padding: 1.25rem;
+    }
+
+    .resetSection {
+        padding: 1.25rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .header h1 {
+        font-size: 1.3rem;
+    }
+
+    .formSection,
+    .logsSection {
+        padding: 1rem;
+    }
+
+    .resetSection {
+        padding: 1rem;
+    }
+
+    .resetCardHeader {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .resetEmail {
+        font-size: 0.85rem;
     }
 }
 
@@ -34,13 +103,15 @@
 }
 
 .error {
-    background-color: #f8d7da;
-    color: #721c24;
+    background-color: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
 }
 
 .success {
-    background-color: #d4edda;
-    color: #155724;
+    background-color: #f0fdf4;
+    color: #166534;
+    border: 1px solid #bbf7d0;
 }
 
 .form {
@@ -292,12 +363,22 @@
 }
 
 /* Dark mode adjustments */
-@media (prefers-color-scheme: dark) {
-    .resetCard {
-        background: rgba(255, 255, 255, 0.02);
-    }
+:global(:root.dark) .resetCard {
+    background: rgba(255, 255, 255, 0.02);
+}
 
-    .pendingTag {
-        background: rgba(255, 153, 51, 0.2);
-    }
+:global(:root.dark) .pendingTag {
+    background: rgba(255, 153, 51, 0.2);
+}
+
+:global(:root.dark) .error {
+    background-color: rgba(220, 38, 38, 0.12);
+    color: #fca5a5;
+    border: 1px solid rgba(220, 38, 38, 0.3);
+}
+
+:global(:root.dark) .success {
+    background-color: rgba(22, 163, 74, 0.12);
+    color: #86efac;
+    border: 1px solid rgba(22, 163, 74, 0.3);
 }

@@ -2,7 +2,7 @@ import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
 import styles from "./page.module.css";
 import { logout } from "@/app/actions/auth";
-import { UserIcon, BuildingOfficeIcon, PhoneIcon, CheckBadgeIcon } from "@heroicons/react/24/outline";
+import { UserIcon, BuildingOfficeIcon, PhoneIcon, CheckBadgeIcon, ArrowLeftIcon } from "@heroicons/react/24/outline";
 import DepartmentClient from "./DepartmentClient";
 
 export default async function DepartmentDashboard() {
@@ -49,9 +49,14 @@ export default async function DepartmentDashboard() {
     return (
         <div className="container">
             <header className={styles.header}>
-                <div>
-                    <h1>Department Dashboard</h1>
-                    <p className={styles.subtitle}>{profile.department} Department</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <a href="/" className={styles.backBtn} title="Go back">
+                        <ArrowLeftIcon style={{ width: 20, height: 20 }} />
+                    </a>
+                    <div>
+                        <h1>Department Dashboard</h1>
+                        <p className={styles.subtitle}>{profile.department} Department</p>
+                    </div>
                 </div>
                 <form action={logout} style={{ marginLeft: 'auto' }}>
                     <button className="btn btn-danger">
@@ -60,10 +65,11 @@ export default async function DepartmentDashboard() {
                 </form>
             </header>
 
-            {/* Client Component handles Search, Filter, and Modal */}
+            {/* Client Component handles Search, Filter, Modal & Analytics */}
             <DepartmentClient
                 pendingRequests={pendingRequests || []}
                 approvedVisitors={approvedVisitors || []}
+                department={profile.department}
             />
 
         </div>

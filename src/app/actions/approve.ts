@@ -3,12 +3,25 @@
 import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { UID_PREFIX, UID_RANDOM_LENGTH, UID_MONTH_CODES } from "@/lib/constants";
+
+/**
+ * Generate a unique visitor UID with retry logic to avoid collisions.
+ * Format: SCSVMV######M (e.g. SCSVMV102345J)
+ */
+function generateUID(): string {
+    const currentMonthCode = UID_MONTH_CODES[new Date().getMonth()];
+    const min = Math.pow(10, UID_RANDOM_LENGTH - 1);
+    const max = Math.pow(10, UID_RANDOM_LENGTH) - 1;
+    const uniqueNumber = Math.floor(min + Math.random() * (max - min + 1));
+    return `${UID_PREFIX}${uniqueNumber}${currentMonthCode}`;
+}
 
 export async function approveVisitor(formData: FormData) {
     const requestId = formData.get("id") as string;
 
     if (!requestId) {
-        throw new Error("Request ID is required");
+        return { error: "Request ID is required" };
     }
 
     const supabase = await createClient();
@@ -26,31 +39,42 @@ export async function approveVisitor(formData: FormData) {
         .single();
 
     if (profile?.role !== "department_admin") {
-        throw new Error("Unauthorized: Only Department Admins can approve requests.");
+        return { error: "Unauthorized: Only Department Admins can approve requests." };
     }
 
     // 2. Fetch the request to verify department match
     const { data: request } = await supabase
         .from("visitor_requests")
-        .select("department, name, email")
+        .select("department, name, email, status")
         .eq("id", requestId)
         .single();
 
     if (!request || request.department !== profile.department) {
-        throw new Error("Unauthorized or Request Not Found");
+        return { error: "Unauthorized or Request Not Found" };
     }
 
-    // 3. Generate UID
-    // UID Format: SCSVMV####M (e.g. SCSVMV1023J)
-    // Logic: 
-    // - Fixed Prefix: SCSVMV
-    // - ####: We can use a sequence or random number for now. Let's use last 4 of timestamp or random.
-    // - M: Month Code
+    if (request.status !== "pending") {
+        return { error: "This request has already been processed." };
+    }
 
-    const monthCodes = ["J", "F", "M", "A", "Y", "U", "L", "G", "S", "O", "N", "D"];
-    const currentMonthCode = monthCodes[new Date().getMonth()];
-    const uniqueNumber = Math.floor(1000 + Math.random() * 9000); // 4 digit random
-    const uid = `SCSVMV${uniqueNumber}${currentMonthCode}`;
+    // 3. Generate UID with collision retry (up to 5 attempts)
+    let uid = "";
+    let retries = 5;
+    while (retries > 0) {
+        uid = generateUID();
+        const { data: existing } = await supabase
+            .from("visitor_requests")
+            .select("id")
+            .eq("visitor_uid", uid)
+            .maybeSingle();
+
+        if (!existing) break; // No collision
+        retries--;
+    }
+
+    if (retries === 0) {
+        return { error: "Failed to generate unique UID. Please try again." };
+    }
 
     // 4. Update Database
     const { error } = await supabase
@@ -62,10 +86,10 @@ export async function approveVisitor(formData: FormData) {
         .eq("id", requestId);
 
     if (error) {
-        throw new Error("Failed to approve request");
+        return { error: "Failed to approve request: " + error.message };
     }
 
-    // 5. Send Email (Local Utility via .env.local for debugging)
+    // 5. Send Email
     const { sendApprovalEmail } = await import("@/utils/email");
     const emailResult = await sendApprovalEmail(
         request.email || "visitor@example.com",
@@ -76,10 +100,61 @@ export async function approveVisitor(formData: FormData) {
 
     if (!emailResult.success) {
         console.error("Failed to send approval email:", emailResult.error);
-    } else {
-        console.log("Approval email sent successfully via local SMTP");
     }
 
     // 6. Revalidate Dashboard
     revalidatePath("/admin/dept");
+    return { success: true, message: `Visitor approved with UID: ${uid}` };
+}
+
+export async function rejectVisitor(formData: FormData) {
+    const requestId = formData.get("id") as string;
+    const reason = (formData.get("reason") as string) || "No reason provided";
+
+    if (!requestId) {
+        return { error: "Request ID is required" };
+    }
+
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+        redirect("/login?role=admin");
+    }
+
+    const { data: profile } = await supabase
+        .from("profiles")
+        .select("role, department")
+        .eq("id", user.id)
+        .single();
+
+    if (profile?.role !== "department_admin") {
+        return { error: "Unauthorized" };
+    }
+
+    const { data: request } = await supabase
+        .from("visitor_requests")
+        .select("department, status")
+        .eq("id", requestId)
+        .single();
+
+    if (!request || request.department !== profile.department) {
+        return { error: "Unauthorized or Request Not Found" };
+    }
+
+    if (request.status !== "pending") {
+        return { error: "This request has already been processed." };
+    }
+
+    const { error } = await supabase
+        .from("visitor_requests")
+        .update({ status: "rejected" })
+        .eq("id", requestId);
+
+    if (error) {
+        return { error: "Failed to reject request: " + error.message };
+    }
+
+    revalidatePath("/admin/dept");
+    return { success: true, message: "Visitor request rejected." };
 }

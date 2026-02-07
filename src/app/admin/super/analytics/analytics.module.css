@@ -1,0 +1,211 @@
+/* ─── Analytics Dashboard — CSS Module ─── */
+
+/* Header actions */
+.headerActions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.headerActions .btn {
+    font-size: 0.85rem;
+}
+
+/* ─── Stat Cards Grid ─── */
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.statCard {
+    border-left: 4px solid var(--primary-color);
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.statCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.statContent {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    padding: 1rem 1.15rem !important;
+}
+
+.statLabel {
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.statValue {
+    font-size: 1.75rem;
+    font-weight: 700;
+    line-height: 1.2;
+    color: var(--text-primary);
+}
+
+.statSub {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+/* ─── Charts Grid ─── */
+.chartsGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+/* ─── Logs Table Card ─── */
+.logsCard {
+    margin-bottom: 2rem;
+}
+
+.logsHeader {
+    flex-direction: row !important;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding-bottom: 1rem !important;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.filtersRow {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.filtersRow select {
+    width: auto;
+    min-width: 140px;
+    font-size: 0.875rem;
+}
+
+.logCount {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.loadingText {
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+/* Table */
+.logTable {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.logTable thead tr {
+    text-align: left;
+    border-bottom: 2px solid var(--border-color);
+    background: var(--surface-color);
+}
+
+.logTable th {
+    padding: 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-secondary);
+}
+
+.logTable td {
+    padding: 0.75rem;
+    font-size: 0.9rem;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: top;
+}
+
+.logTable tbody tr:hover {
+    background: var(--surface-hover, rgba(0, 0, 0, 0.015));
+}
+
+.uidSmall {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    font-family: "Courier New", monospace;
+}
+
+.durationCell {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.timingCell {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 1024px) {
+    .statsGrid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .statsGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .chartsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .logsHeader {
+        flex-direction: column !important;
+        align-items: flex-start;
+    }
+
+    .filtersRow {
+        width: 100%;
+    }
+
+    .filtersRow select {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .logCount {
+        width: 100%;
+        text-align: right;
+    }
+}
+
+@media (max-width: 480px) {
+    .statsGrid {
+        grid-template-columns: 1fr 1fr;
+        gap: 0.75rem;
+    }
+
+    .statValue {
+        font-size: 1.5rem;
+    }
+
+    .statContent {
+        padding: 0.85rem !important;
+    }
+
+    .headerActions {
+        width: 100%;
+        justify-content: center;
+    }
+}

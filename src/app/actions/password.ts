@@ -3,29 +3,35 @@
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { revalidatePath } from "next/cache";
-
-// Interface for password reset request
-interface PasswordResetRequest {
-    id: string;
-    email: string;
-    status: 'pending' | 'completed' | 'rejected';
-    created_at: string;
-    updated_at: string;
-}
+import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { passwordResetRequestSchema, processPasswordResetSchema } from "@/lib/validations";
+import type { PasswordResetRequest } from "@/lib/types";
 
 /**
  * Submit a password reset request (called from login page)
  * Does NOT require authentication - anyone can request
  */
 export async function submitPasswordResetRequest(email: string) {
-    if (!email || !email.includes('@')) {
-        return { success: false, error: "A valid email is required" };
+    // Validate with Zod
+    const validation = passwordResetRequestSchema.safeParse({ email });
+    if (!validation.success) {
+        return { success: false, error: validation.error.issues[0].message };
     }
 
-    const supabase = await createClient();
+    // Rate limit: 3 requests per 15 minutes per email
+    const rateLimitKey = getRateLimitKey("password-reset", email.toLowerCase());
+    const { allowed, remaining } = rateLimit(rateLimitKey, 3, 15 * 60 * 1000);
+    if (!allowed) {
+        return { success: false, error: "Too many requests. Please try again later." };
+    }
+
+    // Use admin client because this function is called from the login page
+    // where the user is NOT authenticated — the regular client (anon role)
+    // cannot read/write to password_reset_requests due to RLS policies.
+    const adminClient = createAdminClient();
 
     // Check if this email exists in our profiles
-    const { data: profile } = await supabase
+    const { data: profile } = await adminClient
         .from("profiles")
         .select("id, email")
         .eq("email", email)
@@ -37,7 +43,7 @@ export async function submitPasswordResetRequest(email: string) {
     }
 
     // Check for existing pending request
-    const { data: existingRequest } = await supabase
+    const { data: existingRequest } = await adminClient
         .from("password_reset_requests")
         .select("id")
         .eq("email", email)
@@ -49,7 +55,7 @@ export async function submitPasswordResetRequest(email: string) {
     }
 
     // Create new password reset request
-    const { error } = await supabase
+    const { error } = await adminClient
         .from("password_reset_requests")
         .insert({ email });
 
@@ -64,7 +70,7 @@ export async function submitPasswordResetRequest(email: string) {
 /**
  * Get all password reset requests (Super Admin only)
  */
-export async function getPasswordResetRequests() {
+export async function getPasswordResetRequests(): Promise<{ success: boolean; error?: string; requests: PasswordResetRequest[] }> {
     const supabase = await createClient();
 
     // Verify super admin
@@ -95,7 +101,7 @@ export async function getPasswordResetRequests() {
         return { success: false, error: "Failed to fetch requests", requests: [] };
     }
 
-    return { success: true, requests: requests as PasswordResetRequest[] };
+    return { success: true, requests: (requests || []) as PasswordResetRequest[] };
 }
 
 /**
@@ -103,12 +109,10 @@ export async function getPasswordResetRequests() {
  * Updates the user's password and sends an email with new credentials
  */
 export async function processPasswordReset(requestId: string, newPassword: string) {
-    if (!requestId || !newPassword) {
-        return { success: false, error: "Request ID and new password are required" };
-    }
-
-    if (newPassword.length < 6) {
-        return { success: false, error: "Password must be at least 6 characters" };
+    // Validate
+    const validation = processPasswordResetSchema.safeParse({ requestId, newPassword });
+    if (!validation.success) {
+        return { success: false, error: validation.error.issues[0].message };
     }
 
     const supabase = await createClient();

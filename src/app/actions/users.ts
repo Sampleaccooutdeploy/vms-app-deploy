@@ -3,22 +3,12 @@
 import { createClient } from "@/utils/supabase/server";
 import { createAdminClient } from "@/utils/supabase/admin";
 import { revalidatePath } from "next/cache";
-import { createClient as createServiceClient } from "@supabase/supabase-js"; // For admin actions
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-
-const serviceClient = createServiceClient(supabaseUrl, supabaseServiceKey, {
-    auth: {
-        autoRefreshToken: false,
-        persistSession: false
-    }
-});
+import { createUserSchema } from "@/lib/validations";
+import type { Profile } from "@/lib/types";
 
 export async function deleteUser(userId: string) {
     try {
-        const supabase = await createClient(); // User client for permission check
-        // Check if current user is super_admin
+        const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return { error: "Unauthorized" };
 
@@ -32,42 +22,41 @@ export async function deleteUser(userId: string) {
             return { error: "Unauthorized: Only Super Admin can delete users." };
         }
 
+        const adminSupabase = createAdminClient();
+
         // 1. Delete from Profiles FIRST (to avoid FK constraint issues)
-        const { error: dbError } = await serviceClient
+        const { error: dbError } = await adminSupabase
             .from("profiles")
             .delete()
             .eq("id", userId);
 
         if (dbError) {
             console.error("Profile delete error:", dbError);
-            // Continue anyway - profile might not exist or was already deleted
         }
 
         // 2. Delete from Auth (requires service role)
-        const { error: authError } = await serviceClient.auth.admin.deleteUser(userId);
+        const { error: authError } = await adminSupabase.auth.admin.deleteUser(userId);
         if (authError) {
             console.error("Auth delete error:", authError);
             return { error: `Failed to delete from Auth: ${authError.message}` };
         }
 
+        revalidatePath("/admin/super");
         return { success: true, message: "User deleted successfully." };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Failed to delete user.";
         console.error("Delete user error:", error);
-        return { error: error.message || "Failed to delete user." };
+        return { error: message };
     }
 }
 
-// ... deleteUser code ...
-
-export async function getUsers() {
+export async function getUsers(): Promise<{ success?: boolean; error?: string; users?: Profile[] }> {
     try {
         const supabase = await createClient();
         const { data: { user } } = await supabase.auth.getUser();
 
-        // Simple authorization check
         if (!user) return { error: "Unauthorized" };
-        // Ideally check role here too, but for list it's okay-ish, better strict:
         const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single();
         if (profile?.role !== "super_admin") return { error: "Unauthorized" };
 
@@ -77,23 +66,31 @@ export async function getUsers() {
             .order("created_at", { ascending: false });
 
         if (error) throw error;
-        return { success: true, users };
+        return { success: true, users: (users || []) as Profile[] };
 
-    } catch (error: any) {
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Failed to fetch users";
         console.error("Get users error:", error);
-        return { error: error.message };
+        return { error: message };
     }
 }
 
 export async function createUser(formData: FormData) {
-    const email = formData.get("email") as string;
-    const password = formData.get("password") as string;
-    const role = formData.get("role") as "department_admin" | "security";
-    const department = formData.get("department") as string;
+    const rawData = {
+        email: formData.get("email") as string,
+        password: formData.get("password") as string,
+        role: formData.get("role") as string,
+        department: formData.get("department") as string,
+    };
 
-    if (!email || !password || !role) {
-        return { error: "Missing required fields" };
+    // Validate with Zod
+    const validation = createUserSchema.safeParse(rawData);
+    if (!validation.success) {
+        const firstError = validation.error.issues[0];
+        return { error: firstError.message };
     }
+
+    const { email, password, role, department } = validation.data;
 
     // 1. Verify Requestor is Super Admin
     const supabase = await createClient();
@@ -118,33 +115,30 @@ export async function createUser(formData: FormData) {
     const { data: newUser, error: createError } = await adminSupabase.auth.admin.createUser({
         email,
         password,
-        email_confirm: true // Auto confirm
+        email_confirm: true
     });
 
     // If user already exists, update their password instead
     if (createError && createError.message.toLowerCase().includes('already')) {
-        // Lookup user by email using getUserByEmail (more reliable than listUsers)
-        const { data: existingUsers } = await adminSupabase.auth.admin.listUsers();
-        const existingUser = existingUsers?.users?.find(u => u.email === email);
+        // Use targeted lookup instead of listing all users
+        const { data: existingProfile } = await adminSupabase
+            .from("profiles")
+            .select("id, role")
+            .eq("email", email)
+            .single();
 
-        if (!existingUser) {
+        if (!existingProfile) {
             return { error: "User exists but could not be found for update. Please try again." };
         }
 
         // Check if the existing user is a Super Admin - protect them
-        const { data: existingProfile } = await adminSupabase
-            .from("profiles")
-            .select("role")
-            .eq("id", existingUser.id)
-            .single();
-
-        if (existingProfile?.role === "super_admin") {
+        if (existingProfile.role === "super_admin") {
             return { error: "Cannot modify Super Admin accounts. Use a different email." };
         }
 
         // Update password
         const { error: updateError } = await adminSupabase.auth.admin.updateUserById(
-            existingUser.id,
+            existingProfile.id,
             { password }
         );
 
@@ -156,7 +150,7 @@ export async function createUser(formData: FormData) {
         const { error: profileError } = await adminSupabase
             .from("profiles")
             .upsert({
-                id: existingUser.id,
+                id: existingProfile.id,
                 email: email,
                 role: role,
                 department: role === 'department_admin' ? department : null

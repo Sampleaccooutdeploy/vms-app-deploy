@@ -54,6 +54,30 @@
     font-weight: 500;
 }
 
+/* Hamburger button — hidden on desktop */
+.hamburger {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: rgba(255, 255, 255, 0.2);
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.hamburger:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.hamburgerIcon {
+    width: 24px;
+    height: 24px;
+    color: white;
+}
+
 .nav {
     display: flex;
     gap: 2rem;
@@ -86,21 +110,109 @@
     height: 20px;
 }
 
+/* ─── Mobile ─── */
 @media (max-width: 768px) {
+    .header {
+        height: auto;
+        min-height: var(--header-height);
+        padding: 0.5rem 0;
+    }
+
+    .container {
+        padding: 0 0.75rem;
+    }
+
     .orgName {
-        font-size: 1.2rem;
+        font-size: 1rem;
     }
 
     .systemName {
         display: none;
     }
 
-    .navLink span {
-        display: none;
+    .logo {
+        height: 45px;
     }
 
+    .logoSection {
+        gap: 0.5rem;
+    }
+
+    /* Show hamburger */
+    .hamburger {
+        display: flex;
+    }
+
+    /* Nav becomes a dropdown */
+    .nav {
+        display: none;
+        flex-direction: column;
+        position: absolute;
+        top: 100%;
+        right: 0;
+        left: 0;
+        background-color: var(--secondary-color);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        padding: 0.5rem;
+        gap: 0.25rem;
+        z-index: 999;
+    }
+
+    .navOpen {
+        display: flex;
+    }
+
+    .navLink {
+        padding: 0.75rem 1rem;
+        font-size: 1rem;
+        border-radius: var(--radius-sm);
+    }
+
+    .navLink span {
+        display: inline;
+    }
+
+    .rightSection {
+        gap: 0.75rem;
+    }
+
+    .themeToggle {
+        width: 36px;
+        height: 36px;
+    }
+
+    .themeIcon {
+        width: 18px;
+        height: 18px;
+    }
+}
+
+@media (max-width: 480px) {
     .container {
-        padding: 0 1rem;
+        padding: 0 0.5rem;
+    }
+
+    .logo {
+        height: 38px;
+    }
+
+    .orgName {
+        font-size: 0.9rem;
+    }
+
+    .icon {
+        width: 18px;
+        height: 18px;
+    }
+
+    .themeToggle {
+        width: 32px;
+        height: 32px;
+    }
+
+    .themeIcon {
+        width: 16px;
+        height: 16px;
     }
 }
 

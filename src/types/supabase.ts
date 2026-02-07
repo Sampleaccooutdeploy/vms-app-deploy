@@ -70,6 +70,8 @@ export type Database = {
           department: string
           designation: string | null
           email: string | null
+          expected_date: string | null
+          expected_time: string | null
           id: string
           name: string
           organization: string | null
@@ -86,6 +88,8 @@ export type Database = {
           department: string
           designation?: string | null
           email?: string | null
+          expected_date?: string | null
+          expected_time?: string | null
           id?: string
           name: string
           organization?: string | null
@@ -102,6 +106,8 @@ export type Database = {
           department?: string
           designation?: string | null
           email?: string | null
+          expected_date?: string | null
+          expected_time?: string | null
           id?: string
           name?: string
           organization?: string | null

@@ -1,4 +1,28 @@
+/* ── Page wrapper ── */
+.pageWrapper {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 85vh;
+    overflow: hidden;
+}
+
+/* ── Subtle dot-grid background pattern ── */
+.bgPattern {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.45;
+    pointer-events: none;
+    background-image: radial-gradient(circle, var(--border-color) 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+
+/* ── Card with slide-up entry ── */
 .loginCard {
+    position: relative;
+    z-index: 1;
     background: var(--surface-color);
     padding: 2.5rem;
     border-radius: var(--radius-lg);
@@ -7,15 +31,28 @@
     max-width: 420px;
     border: 1px solid var(--border-color);
     text-align: center;
+    box-sizing: border-box;
+    animation: cardSlideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes cardSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(32px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .iconHeader {
-    width: 80px;
-    height: 80px;
+    width: 100px;
+    height: 100px;
     margin: 0 auto 1rem auto;
     border-radius: 50%;
     overflow: hidden;
-    background-color: #fff;
+    background-color: var(--surface-color);
     padding: 0;
     border: 1px solid var(--border-color);
     display: flex;
@@ -58,6 +95,27 @@
     align-items: center;
     gap: 0.5rem;
     text-align: left;
+}
+
+/* Login Dark Mode */
+:global(:root.dark) .loginCard {
+    background: var(--surface-color);
+    border-color: var(--border-color);
+}
+
+:global(:root.dark) .error {
+    background-color: rgba(220, 38, 38, 0.12);
+    color: #fca5a5;
+    border-color: rgba(220, 38, 38, 0.3);
+}
+
+:global(:root.dark) .modal {
+    background: var(--surface-color);
+    border-color: var(--border-color);
+}
+
+:global(:root.dark) .footerText a {
+    color: var(--secondary-color);
 }
 
 .errorIcon {
@@ -103,10 +161,25 @@
     color: var(--secondary-color);
     font-size: 0.85rem;
     text-decoration: none;
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0;
+    transition: color 0.2s ease;
 }
 
 .forgotLink:hover {
     text-decoration: underline;
+    color: #e07800;
+}
+
+.keyIcon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
 }
 
 .warningText {
@@ -148,6 +221,17 @@
 .footerText a:hover {
     text-decoration: underline;
 }
+
+/* ── Branding strip ── */
+.brandingStrip {
+    margin-top: 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    letter-spacing: 0.02em;
+}
+
 /* Modal Styles */
 .modalOverlay {
     position: fixed;
@@ -181,5 +265,47 @@
     to {
         opacity: 1;
         transform: scale(1);
+    }
+}
+
+/* Login Page Responsive */
+@media (max-width: 480px) {
+    .loginCard {
+        padding: 1.5rem 1rem;
+        border-radius: var(--radius-md);
+        margin: 0 0.25rem;
+    }
+
+    .iconHeader {
+        width: 80px;
+        height: 80px;
+    }
+
+    .title {
+        font-size: 1.25rem;
+    }
+
+    .subtitle {
+        font-size: 0.85rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .modal {
+        padding: 1.25rem;
+        max-width: calc(100vw - 2rem);
+    }
+
+    .footerText {
+        font-size: 0.8rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .loginCard {
+        padding: 2rem 1.5rem;
+    }
+
+    .modal {
+        max-width: calc(100vw - 2rem);
     }
 }

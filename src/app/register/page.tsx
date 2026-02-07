@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { createClient } from "@/utils/supabase/client";
 import styles from "./page.module.css";
 import { CustomDialog } from "@/components/ui/CustomDialog";
+import { DEPARTMENTS, MAX_PHOTO_SIZE_BYTES, ALLOWED_PHOTO_TYPES } from "@/lib/constants";
 import {
     CheckCircleIcon,
     CloudArrowUpIcon,
@@ -15,8 +16,17 @@ import {
     ChatBubbleBottomCenterTextIcon,
     MapPinIcon,
     CheckBadgeIcon,
-    ExclamationTriangleIcon
+    ExclamationTriangleIcon,
 } from "@heroicons/react/24/outline";
+import CalendarTimePicker from "@/components/ui/CalendarTimePicker";
+
+// Progress step definitions
+const FORM_STEPS = [
+    { id: "personal", label: "Personal", fields: ["name", "designation"] },
+    { id: "contact", label: "Contact", fields: ["organization", "email", "phone"] },
+    { id: "visit", label: "Visit Details", fields: ["department", "purpose", "expectedDate", "expectedTime"] },
+    { id: "photo", label: "Photo", fields: [] }, // Photo tracked separately
+] as const;
 
 export default function Register() {
     const supabase = createClient();
@@ -34,6 +44,8 @@ export default function Register() {
         purpose: string;
         department: string;
         photoUrl: string;
+        expectedDate: string;
+        expectedTime: string;
     } | null>(null);
 
     // Dialog State
@@ -56,7 +68,23 @@ export default function Register() {
         email: "",
         purpose: "",
         department: "",
+        expectedDate: "",
+        expectedTime: "",
     });
+
+    // Calculate form progress
+    const formProgress = useMemo(() => {
+        const stepStatuses = FORM_STEPS.map((step) => {
+            if (step.id === "photo") return selectedFile ? true : false;
+            return step.fields.every((field) => {
+                const val = formData[field as keyof typeof formData];
+                return val !== undefined && val !== "";
+            });
+        });
+        const completedSteps = stepStatuses.filter(Boolean).length;
+        const percentage = Math.round((completedSteps / FORM_STEPS.length) * 100);
+        return { stepStatuses, completedSteps, percentage };
+    }, [formData, selectedFile]);
 
     const [emailValidFormat, setEmailValidFormat] = useState(false);
 
@@ -146,14 +174,13 @@ export default function Register() {
         }
 
         // Client-side validation
-        if (selectedFile.size > 5 * 1024 * 1024) {
+        if (selectedFile.size > MAX_PHOTO_SIZE_BYTES) {
             showDialog("File Too Large", "File size must be less than 5MB");
             setLoading(false);
             return;
         }
 
-        const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-        if (!allowedTypes.includes(selectedFile.type)) {
+        if (!(ALLOWED_PHOTO_TYPES as readonly string[]).includes(selectedFile.type)) {
             showDialog("Invalid File Type", "Only JPEG, PNG, or WebP images are allowed");
             setLoading(false);
             return;
@@ -188,7 +215,9 @@ export default function Register() {
             purpose: formData.purpose,
             department: formData.department,
             photo_url: publicUrl,
-            status: "pending"
+            status: "pending",
+            expected_date: formData.expectedDate || null,
+            expected_time: formData.expectedTime || null,
         });
 
         if (error) {
@@ -204,9 +233,22 @@ export default function Register() {
                 purpose: formData.purpose,
                 department: formData.department,
                 photoUrl: publicUrl,
+                expectedDate: formData.expectedDate,
+                expectedTime: formData.expectedTime,
             });
             setSuccess(true);
             sessionStorage.removeItem("visitor_form_draft");
+
+            // Notify department admin(s) via email — fire-and-forget
+            import("@/app/actions/notify").then(({ notifyDepartmentAdmin }) => {
+                notifyDepartmentAdmin(
+                    formData.department,
+                    formData.name,
+                    formData.email,
+                    formData.organization,
+                    formData.purpose
+                ).catch((err) => console.error("Notification failed:", err));
+            });
         }
         setLoading(false);
     };
@@ -257,10 +299,20 @@ export default function Register() {
                                 <span className={styles.detailLabel}>Department</span>
                                 <span className={styles.detailValue}>{submittedData.department}</span>
                             </div>
-                            <div className={styles.detailRow} style={{ gridColumn: 'span 2' }}>
+                            <div className={`${styles.detailRow} ${styles.fullWidth}`}>
                                 <span className={styles.detailLabel}>Purpose</span>
                                 <span className={styles.detailValue}>{submittedData.purpose}</span>
                             </div>
+                            {(submittedData.expectedDate || submittedData.expectedTime) && (
+                                <div className={`${styles.detailRow} ${styles.fullWidth}`}>
+                                    <span className={styles.detailLabel}>Expected Arrival</span>
+                                    <span className={styles.detailValue}>
+                                        {submittedData.expectedDate && new Date(submittedData.expectedDate + "T00:00:00").toLocaleDateString("en-IN", { dateStyle: "medium" })}
+                                        {submittedData.expectedDate && submittedData.expectedTime && " at "}
+                                        {submittedData.expectedTime && new Date(`1970-01-01T${submittedData.expectedTime}`).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                                    </span>
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -318,6 +370,34 @@ export default function Register() {
                     <h1 className={styles.title}>Visitor Registration</h1>
                     <p className={styles.subtitle}>Welcome to SCSVMV. Please fill in your details.</p>
                 </div>
+
+                {/* Form Progress Indicator */}
+                <div className={styles.progressContainer}>
+                    <div className={styles.progressBar}>
+                        <div
+                            className={styles.progressFill}
+                            style={{ width: `${formProgress.percentage}%` }}
+                        />
+                    </div>
+                    <div className={styles.progressSteps}>
+                        {FORM_STEPS.map((step, idx) => (
+                            <div
+                                key={step.id}
+                                className={`${styles.progressStep} ${formProgress.stepStatuses[idx] ? styles.progressStepDone : ""}`}
+                            >
+                                <div className={styles.progressDot}>
+                                    {formProgress.stepStatuses[idx] ? (
+                                        <CheckCircleIcon className={styles.progressCheckIcon} />
+                                    ) : (
+                                        <span className={styles.progressDotNumber}>{idx + 1}</span>
+                                    )}
+                                </div>
+                                <span className={styles.progressLabel}>{step.label}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
                 <form onSubmit={handleSubmit} className={styles.form}>
 
                     <div className={styles.grid}>
@@ -356,7 +436,7 @@ export default function Register() {
                         </div>
 
                         {/* Organization */}
-                        <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                        <div className={`form-group ${styles.fullWidth}`}>
                             <label className={styles.label}>
                                 <BuildingOfficeIcon className={styles.labelIcon} /> Organization / College
                             </label>
@@ -441,21 +521,24 @@ export default function Register() {
                                 onChange={handleChange}
                             >
                                 <option value="">Select Department</option>
-                                <option value="CSE">CSE</option>
-                                <option value="ECE">ECE</option>
-                                <option value="EEE">EEE</option>
-                                <option value="MECH">MECH</option>
-                                <option value="CIVIL">CIVIL</option>
-                                <option value="IT">IT</option>
-                                <option value="EIE">EIE</option>
-                                <option value="ADMINISTRATION">ADMINISTRATION</option>
-                                <option value="LIBRARY">LIBRARY</option>
-                                <option value="HOSTEL">HOSTEL</option>
+                                {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
                             </select>
                         </div>
 
+                        {/* Expected Date & Time of Arrival — Calendar + Time Presets */}
+                        <div className={`form-group ${styles.fullWidth}`}>
+                            <CalendarTimePicker
+                                label="Expected Date & Time of Arrival"
+                                hint="Optional — helps the department prepare for your visit"
+                                selectedDate={formData.expectedDate}
+                                selectedTime={formData.expectedTime}
+                                onDateChange={(date) => setFormData(prev => ({ ...prev, expectedDate: date }))}
+                                onTimeChange={(time) => setFormData(prev => ({ ...prev, expectedTime: time }))}
+                            />
+                        </div>
+
                         {/* Purpose */}
-                        <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                        <div className={`form-group ${styles.fullWidth}`}>
                             <label className={styles.label}>
                                 <ChatBubbleBottomCenterTextIcon className={styles.labelIcon} /> Purpose of Visit
                             </label>
@@ -472,7 +555,7 @@ export default function Register() {
 
 
                         {/* Photo Upload */}
-                        <div className="form-group" style={{ gridColumn: 'span 2' }}>
+                        <div className={`form-group ${styles.fullWidth}`}>
                             <label className={styles.label}>
                                 <CloudArrowUpIcon className={styles.labelIcon} /> Visitor Photo
                             </label>

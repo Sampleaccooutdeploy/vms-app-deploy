@@ -1,76 +1,246 @@
+/* ===================================
+   SECURITY PORTAL — Professional Design
+   =================================== */
+
+/* Header */
 .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 2rem 0;
-    border-bottom: 1px solid var(--border-color);
+    padding: 1.75rem 0;
     margin-bottom: 2rem;
+    border-bottom: 2px solid var(--border-color);
 }
 
+.headerLeft {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.headerIcon {
+    width: 32px;
+    height: 32px;
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+.header h1 {
+    font-size: 1.5rem;
+    letter-spacing: -0.02em;
+    margin: 0;
+}
+
+.headerSub {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.scannerChip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 9999px;
+    border: 1px solid var(--border-color);
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    background: var(--surface-color);
+    transition: all 0.2s;
+}
+
+.scannerChip.scannerActive {
+    color: #16a34a;
+    border-color: #bbf7d0;
+    background: #f0fdf4;
+}
+
+.scannerIcon {
+    width: 16px;
+    height: 16px;
+}
+
+/* Dashboard */
 .dashboard {
-    max-width: 800px;
+    max-width: 720px;
     margin: 0 auto;
 }
 
+/* Search */
 .searchSection {
-    background: var(--surface-color);
-    padding: 2rem;
-    border-radius: var(--radius-md);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-    margin-bottom: 2rem;
-    border: 1px solid var(--border-color);
+    margin-bottom: 1.5rem;
 }
 
 .searchForm {
     display: flex;
-    gap: 1rem;
-    margin-top: 1rem;
 }
 
-.searchForm input {
+.searchInputGroup {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    background: var(--surface-color);
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    transition: border-color 0.2s;
+}
+
+.searchInputGroup:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.08);
+}
+
+.searchIcon {
+    width: 20px;
+    height: 20px;
+    margin-left: 1rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.searchInput {
     flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 0.85rem 0.75rem;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    min-width: 0;
 }
 
-.message {
-    padding: 1rem;
-    border-radius: var(--radius-sm);
-    margin-top: 1rem;
-    text-align: center;
+.searchInput::placeholder {
+    color: var(--text-muted);
 }
 
-.error {
-    background-color: #f8d7da;
-    color: #721c24;
+.searchBtn {
+    padding: 0.85rem 1.5rem;
+    background: var(--primary-color);
+    color: #fff;
+    border: none;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.2s;
 }
 
-.success {
-    background-color: #d4edda;
-    color: #155724;
+.searchBtn:hover:not(:disabled) {
+    opacity: 0.9;
 }
 
+.searchBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Toast Messages */
+.toast {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md);
+    margin-top: 0.75rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.toastSuccess {
+    background: #f0fdf4;
+    color: #166534;
+    border: 1px solid #bbf7d0;
+}
+
+.toastError {
+    background: #fef2f2;
+    color: #991b1b;
+    border: 1px solid #fecaca;
+}
+
+.toastIcon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+/* ===================================
+   VISITOR CARD
+   =================================== */
 .visitorCard {
     background: var(--surface-color);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
-    padding: 2rem;
-    display: grid;
-    grid-template-columns: 200px 1fr;
-    gap: 2rem;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 6px 16px rgba(0, 0, 0, 0.04);
 }
 
-@media (max-width: 600px) {
-    .visitorCard {
-        grid-template-columns: 1fr;
-        text-align: center;
-    }
-}
-
-.photoWrapper {
+/* Card Header (status bar) */
+.cardHeader {
     display: flex;
-    flex-direction: column;
+    justify-content: space-between;
     align-items: center;
-    gap: 1rem;
+    padding: 0.85rem 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    background: var(--surface-color);
+}
+
+/* Status chips */
+.statusChip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3rem 0.85rem;
+    border-radius: 9999px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+}
+
+.statusApproved {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.statusCheckedIn {
+    background: #dbeafe;
+    color: #1e40af;
+}
+
+.statusCheckedOut {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+.statusDefault {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.uid {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-family: "SF Mono", "Cascadia Code", "Fira Code", monospace;
+    letter-spacing: 0.03em;
+}
+
+/* Card Body */
+.cardBody {
+    display: grid;
+    grid-template-columns: 140px 1fr;
+    gap: 1.5rem;
+    padding: 1.5rem;
+}
+
+.photoCol {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
 }
 
 .photo {
@@ -78,38 +248,450 @@
     aspect-ratio: 1;
     object-fit: cover;
     border-radius: var(--radius-md);
-    border: 4px solid var(--border-color);
+    border: 3px solid var(--border-color);
 }
 
-.badgeActive {
-    background-color: var(--status-checked-in);
-    color: white;
-}
-
-.badgeInactive {
-    background-color: var(--status-checked-out);
-    color: white;
-}
-
-.info h3 {
-    font-size: 1.5rem;
-    margin-bottom: 1rem;
-    color: var(--primary-color);
-}
-
-.info p {
-    margin-bottom: 0.5rem;
-    font-size: 1.1rem;
-}
-
-.actions {
-    margin-top: 2rem;
+.detailsCol {
     display: flex;
-    gap: 1rem;
+    flex-direction: column;
+    justify-content: center;
 }
 
-.completedText {
+.visitorName {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 1rem;
+    letter-spacing: -0.01em;
+}
+
+.detailGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.85rem;
+}
+
+.detailItem {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.detailLabel {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
     color: var(--text-muted);
-    font-weight: bold;
-    font-style: italic;
+}
+
+.detailValue {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* Timestamps */
+.timestamps {
+    display: flex;
+    gap: 0;
+    border-top: 1px solid var(--border-color);
+}
+
+.timeItem {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.85rem 1.5rem;
+    background: var(--surface-color);
+}
+
+.timeItem + .timeItem {
+    border-left: 1px solid var(--border-color);
+}
+
+.timeIcon {
+    width: 18px;
+    height: 18px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.timeLabel {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+
+.timeValue {
+    display: block;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+/* Card Footer (actions) */
+.cardFooter {
+    padding: 1.25rem 1.5rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.actionHint {
+    margin: 0 0 0.75rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+/* Action Buttons */
+.btnCheckIn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.9rem 1.5rem;
+    border-radius: var(--radius-md);
+    border: none;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: #16a34a;
+    color: #fff;
+    transition: background 0.2s;
+}
+
+.btnCheckIn:hover:not(:disabled) {
+    background: #15803d;
+}
+
+.btnCheckIn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btnCheckOut {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    padding: 0.9rem 1.5rem;
+    border-radius: var(--radius-md);
+    border: none;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    background: #dc2626;
+    color: #fff;
+    transition: background 0.2s;
+}
+
+.btnCheckOut:hover:not(:disabled) {
+    background: #b91c1c;
+}
+
+.btnCheckOut:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.btnIcon {
+    width: 22px;
+    height: 22px;
+}
+
+/* Completed banner */
+.completedBanner {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 1rem 1.25rem;
+    background: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: var(--radius-md);
+}
+
+.completedBanner strong {
+    display: block;
+    color: #166534;
+    font-size: 0.95rem;
+}
+
+.completedBanner span {
+    display: block;
+    color: #15803d;
+    font-size: 0.82rem;
+    margin-top: 0.1rem;
+}
+
+.completedIcon {
+    width: 28px;
+    height: 28px;
+    color: #16a34a;
+    flex-shrink: 0;
+}
+
+/* Pending / Rejected banners */
+.pendingBanner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: var(--radius-md);
+    font-size: 0.88rem;
+    color: #92400e;
+}
+
+.pendingIcon {
+    width: 22px;
+    height: 22px;
+    color: #d97706;
+    flex-shrink: 0;
+}
+
+.rejectedBanner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: var(--radius-md);
+    font-size: 0.88rem;
+    color: #991b1b;
+}
+
+.rejectedIcon {
+    width: 22px;
+    height: 22px;
+    color: #dc2626;
+    flex-shrink: 0;
+}
+
+/* ===================================
+   RESPONSIVE
+   =================================== */
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+        padding: 1.25rem 0;
+    }
+
+    .headerLeft {
+        flex-direction: column;
+        gap: 0.35rem;
+    }
+
+    .searchBtn {
+        padding: 0.85rem 1rem;
+    }
+
+    .cardBody {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 1rem;
+        padding: 1.25rem;
+    }
+
+    .photo {
+        max-width: 140px;
+        margin: 0 auto;
+    }
+
+    .detailGrid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .timestamps {
+        flex-direction: column;
+    }
+
+    .timeItem + .timeItem {
+        border-left: none;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .cardHeader,
+    .cardFooter {
+        padding: 0.75rem 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .header h1 {
+        font-size: 1.25rem;
+    }
+
+    .headerIcon {
+        width: 28px;
+        height: 28px;
+    }
+
+    .searchInput {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.88rem;
+    }
+
+    .searchBtn {
+        padding: 0.75rem 0.85rem;
+        font-size: 0.82rem;
+    }
+
+    .searchIcon {
+        width: 18px;
+        height: 18px;
+        margin-left: 0.75rem;
+    }
+
+    .cardBody {
+        padding: 1rem;
+    }
+
+    .visitorName {
+        font-size: 1.15rem;
+    }
+
+    .detailGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .timeItem {
+        padding: 0.65rem 1rem;
+    }
+}
+
+/* ===================================
+   DARK MODE — Professional Overrides
+   =================================== */
+
+/* Scanner chip */
+:global(:root.dark) .scannerChip.scannerActive {
+    background: rgba(22, 163, 74, 0.12);
+    color: #86efac;
+    border-color: rgba(22, 163, 74, 0.3);
+}
+
+/* Search */
+:global(:root.dark) .searchInputGroup {
+    background: var(--surface-color);
+    border-color: var(--border-color);
+}
+
+:global(:root.dark) .searchInputGroup:focus-within {
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 3px rgba(255, 153, 51, 0.1);
+}
+
+:global(:root.dark) .searchBtn {
+    background: var(--secondary-color);
+    color: #1a1a1a;
+}
+
+/* Toast messages */
+:global(:root.dark) .toastSuccess {
+    background: rgba(22, 163, 74, 0.12);
+    color: #86efac;
+    border-color: rgba(22, 163, 74, 0.3);
+}
+
+:global(:root.dark) .toastError {
+    background: rgba(220, 38, 38, 0.12);
+    color: #fca5a5;
+    border-color: rgba(220, 38, 38, 0.3);
+}
+
+/* Visitor card */
+:global(:root.dark) .visitorCard {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2), 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Status chips */
+:global(:root.dark) .statusApproved {
+    background: rgba(22, 163, 74, 0.15);
+    color: #86efac;
+}
+
+:global(:root.dark) .statusCheckedIn {
+    background: rgba(59, 130, 246, 0.15);
+    color: #93c5fd;
+}
+
+:global(:root.dark) .statusCheckedOut {
+    background: rgba(113, 128, 150, 0.15);
+    color: #a0aec0;
+}
+
+:global(:root.dark) .statusDefault {
+    background: rgba(245, 158, 11, 0.15);
+    color: #fcd34d;
+}
+
+/* Photo border */
+:global(:root.dark) .photo {
+    border-color: var(--border-color);
+}
+
+/* Completed banner */
+:global(:root.dark) .completedBanner {
+    background: rgba(22, 163, 74, 0.1);
+    border-color: rgba(22, 163, 74, 0.25);
+}
+
+:global(:root.dark) .completedBanner strong {
+    color: #86efac;
+}
+
+:global(:root.dark) .completedBanner span {
+    color: #6ee7b7;
+}
+
+:global(:root.dark) .completedIcon {
+    color: #86efac;
+}
+
+/* Pending banner */
+:global(:root.dark) .pendingBanner {
+    background: rgba(245, 158, 11, 0.1);
+    color: #fcd34d;
+    border-color: rgba(245, 158, 11, 0.25);
+}
+
+:global(:root.dark) .pendingIcon {
+    color: #fbbf24;
+}
+
+/* Rejected banner */
+:global(:root.dark) .rejectedBanner {
+    background: rgba(220, 38, 38, 0.1);
+    color: #fca5a5;
+    border-color: rgba(220, 38, 38, 0.25);
+}
+
+:global(:root.dark) .rejectedIcon {
+    color: #f87171;
+}
+
+/* Action buttons in dark mode */
+:global(:root.dark) .btnCheckIn {
+    background: #15803d;
+}
+
+:global(:root.dark) .btnCheckIn:hover:not(:disabled) {
+    background: #16a34a;
+}
+
+:global(:root.dark) .btnCheckOut {
+    background: #b91c1c;
+}
+
+:global(:root.dark) .btnCheckOut:hover:not(:disabled) {
+    background: #dc2626;
 }

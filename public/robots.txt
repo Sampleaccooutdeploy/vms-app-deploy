@@ -1,0 +1,11 @@
+# Allow all crawlers
+User-agent: *
+Allow: /
+
+# Block admin and security pages
+Disallow: /admin/
+Disallow: /security/
+Disallow: /login/
+
+# Sitemap
+Sitemap: https://vms.scsvmv.ac.in/sitemap.xml

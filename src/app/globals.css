@@ -105,6 +105,8 @@ a {
   margin: 0 auto;
   padding: 2rem;
   min-height: calc(100vh - var(--header-height));
+  width: 100%;
+  overflow-x: hidden;
 }
 
 .btn {
@@ -256,6 +258,11 @@ a {
   background-color: #e68a00;
 }
 
+:root.dark .btn-secondary {
+  background-color: var(--secondary-color);
+  color: #1A202C;
+}
+
 :root.dark .btn-outline {
   border-color: var(--secondary-color);
   color: var(--secondary-color);
@@ -341,4 +348,245 @@ button,
 [class*="Card"],
 [class*="card"] {
   transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* ================================
+   GLOBAL RESPONSIVE STYLES
+   ================================ */
+
+/* Prevent horizontal overflow globally */
+html, body {
+  overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Mobile-first responsive utilities */
+@media (max-width: 480px) {
+  :root {
+    --header-height: 60px;
+  }
+
+  .container {
+    padding: 1rem;
+  }
+
+  .btn {
+    padding: 0.625rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .form-input,
+  .form-select,
+  .form-textarea {
+    padding: 0.625rem;
+    font-size: 16px; /* Prevent iOS zoom */
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  h1 { font-size: 1.5rem; }
+  h2 { font-size: 1.25rem; }
+  h3 { font-size: 1.1rem; }
+}
+
+@media (min-width: 481px) and (max-width: 768px) {
+  :root {
+    --header-height: 70px;
+  }
+
+  .container {
+    padding: 1.5rem;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .container {
+    padding: 1.5rem;
+  }
+}
+
+/* Utility classes */
+.overflow-x-auto {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Ensure tables scroll on mobile */
+@media (max-width: 768px) {
+  table {
+    display: block;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+  }
+
+  table thead,
+  table tbody,
+  table tr {
+    display: table;
+    width: 100%;
+    table-layout: auto;
+  }
+}
+
+/* ================================
+   ACCESSIBILITY
+   ================================ */
+
+/* Skip to main content link */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 1rem;
+  z-index: 9999;
+  padding: 0.75rem 1.5rem;
+  background: var(--primary-color);
+  color: white;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  transition: top 0.2s;
+}
+
+.skip-link:focus {
+  top: 0.5rem;
+}
+
+/* Screen-reader only */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Focus ring for keyboard navigation */
+:focus-visible {
+  outline: 2px solid var(--secondary-color);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--secondary-color);
+  outline-offset: 2px;
+}
+
+/* ================================
+   BADGE VARIANTS
+   ================================ */
+
+.badge-success {
+  background-color: var(--status-approved);
+  color: white;
+}
+
+.badge-danger {
+  background-color: var(--status-rejected);
+  color: white;
+}
+
+.badge-warning {
+  background-color: var(--status-pending);
+  color: #1a202c;
+}
+
+.badge-info {
+  background-color: var(--status-checked-in);
+  color: white;
+}
+
+.badge-muted {
+  background-color: var(--status-checked-out);
+  color: white;
+}
+
+/* ================================
+   ANIMATIONS
+   ================================ */
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* ================================
+   SITE FOOTER
+   ================================ */
+
+.site-footer {
+  text-align: center;
+  padding: 1.25rem 1rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border-color);
+  margin-top: 2rem;
+  letter-spacing: 0.02em;
+}
+
+/* ================================
+   PRINT STYLES
+   ================================ */
+
+@media print {
+  /* Hide non-essential UI */
+  header,
+  nav,
+  .skip-link,
+  .btn,
+  .themeToggle,
+  .hamburger,
+  [role="dialog"] {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+    color: black;
+    font-size: 12pt;
+  }
+
+  .container {
+    max-width: 100%;
+    padding: 0;
+    margin: 0;
+  }
+
+  /* Ensure tables fit the page */
+  table {
+    display: table;
+    width: 100%;
+    white-space: normal;
+    page-break-inside: auto;
+  }
+
+  tr {
+    page-break-inside: avoid;
+  }
+
+  /* Show URLs for links */
+  a[href]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+  }
+
+  a[href^="#"]::after,
+  a[href^="javascript"]::after {
+    content: "";
+  }
 }

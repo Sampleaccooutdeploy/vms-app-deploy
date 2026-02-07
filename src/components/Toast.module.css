@@ -124,26 +124,24 @@
 }
 
 /* Dark Mode Support */
-@media (prefers-color-scheme: dark) {
-    .toastSuccess {
-        background: linear-gradient(135deg, #0D3D0D 0%, #1E5631 100%);
-        color: #81C995;
-    }
+:global(:root.dark) .toastSuccess {
+    background: linear-gradient(135deg, #0D3D0D 0%, #1E5631 100%);
+    color: #81C995;
+}
 
-    .toastError {
-        background: linear-gradient(135deg, #3D0D0D 0%, #5C1F1F 100%);
-        color: #F28B82;
-    }
+:global(:root.dark) .toastError {
+    background: linear-gradient(135deg, #3D0D0D 0%, #5C1F1F 100%);
+    color: #F28B82;
+}
 
-    .toastInfo {
-        background: linear-gradient(135deg, #0D2840 0%, #1A4377 100%);
-        color: #8AB4F8;
-    }
+:global(:root.dark) .toastInfo {
+    background: linear-gradient(135deg, #0D2840 0%, #1A4377 100%);
+    color: #8AB4F8;
+}
 
-    .toastWarning {
-        background: linear-gradient(135deg, #3D2E0D 0%, #5F4600 100%);
-        color: #FDD663;
-    }
+:global(:root.dark) .toastWarning {
+    background: linear-gradient(135deg, #3D2E0D 0%, #5F4600 100%);
+    color: #FDD663;
 }
 
 /* Mobile Responsive */

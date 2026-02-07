@@ -1,0 +1,144 @@
+.skeleton {
+    background: var(--border-color);
+    border-radius: var(--radius-md);
+    position: relative;
+    overflow: hidden;
+}
+
+.skeleton::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.15) 50%,
+        transparent 100%
+    );
+    animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+/* Preset sizes */
+.text {
+    height: 1rem;
+    width: 80%;
+}
+
+.textSm {
+    height: 0.75rem;
+    width: 60%;
+}
+
+.textLg {
+    height: 1.5rem;
+    width: 40%;
+}
+
+.title {
+    height: 1.75rem;
+    width: 50%;
+    margin-bottom: 0.5rem;
+}
+
+.circle {
+    border-radius: 50%;
+}
+
+.card {
+    height: 200px;
+    width: 100%;
+    border-radius: var(--radius-lg);
+}
+
+.avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.button {
+    height: 40px;
+    width: 120px;
+    border-radius: var(--radius-md);
+}
+
+/* Loading skeleton page layouts */
+.pageContainer {
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.statCard {
+    height: 100px;
+    border-radius: var(--radius-lg);
+}
+
+.tableRow {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.tableCell {
+    height: 1rem;
+    border-radius: var(--radius-sm, 4px);
+}
+
+.cardsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.requestCard {
+    height: 220px;
+    border-radius: var(--radius-lg);
+}
+
+/* Dark mode */
+:global(:root.dark) .skeleton {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+:global(:root.dark) .skeleton::after {
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(255, 255, 255, 0.06) 50%,
+        transparent 100%
+    );
+}
+
+@media (max-width: 640px) {
+    .pageContainer {
+        padding: 1rem;
+    }
+
+    .statsGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .cardsGrid {
+        grid-template-columns: 1fr;
+    }
+}

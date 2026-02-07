@@ -1,112 +1,110 @@
 "use client";
 
-import { useState, useEffect } from "react";
-// import { createClient } from "@/utils/supabase/client"; // Removed for security
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useRef, useCallback } from "react";
 import styles from "./page.module.css";
-import { MagnifyingGlassIcon, ArrowRightOnRectangleIcon, CheckCircleIcon, QrCodeIcon } from "@heroicons/react/24/outline";
-import { Html5QrcodeScanner, Html5QrcodeSupportedFormats } from "html5-qrcode";
-
-// Interface for visitor request
-interface VisitorRequest {
-    id: string;
-    name: string;
-    visitor_uid: string;
-    photo_url: string;
-    status: string;
-    department: string;
-    purpose: string;
-    check_in_time: string | null;
-    check_out_time: string | null;
-}
-
-import { logout } from "@/app/actions/auth";
+import {
+    MagnifyingGlassIcon,
+    ArrowRightOnRectangleIcon,
+    CheckCircleIcon,
+    SignalIcon,
+    ExclamationTriangleIcon,
+    ClockIcon,
+    ArrowRightStartOnRectangleIcon,
+    ShieldCheckIcon,
+} from "@heroicons/react/24/outline";
+import type { VisitorRequest } from "@/lib/types";
 
 export default function SecurityDashboard() {
-    // const supabase = createClient(); // Removed
-    const router = useRouter();
-
-    // Dashboard State - No PIN Required, Direct Access
-    // const [isAuthenticated, setIsAuthenticated] = useState(false); // Removed - direct access
-    // const [pinInput, setPinInput] = useState(""); // Removed
-    // const [authError, setAuthError] = useState(""); // Removed
-
     // Dashboard State
     const [uidInput, setUidInput] = useState("");
     const [visitor, setVisitor] = useState<VisitorRequest | null>(null);
     const [loading, setLoading] = useState(false);
-    const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
-    const [isScanning, setIsScanning] = useState(false);
+    const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-    // No PIN check needed - direct access
-    // useEffect removed for PIN auth
+    // Barcode scanner state
+    const [scannerConnected, setScannerConnected] = useState(false);
+    const barcodeBufferRef = useRef("");
+    const barcodeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const inputRef = useRef<HTMLInputElement>(null);
 
-    // Scanner Effect
+    // Focus the input on mount so barcode gun input is captured
     useEffect(() => {
-        if (isScanning) {
-            const scanner = new Html5QrcodeScanner(
-                "reader",
-                {
-                    fps: 10,
-                    qrbox: { width: 250, height: 150 }, // More rectangular for barcodes
-                    aspectRatio: 1.0,
-                    formatsToSupport: [Html5QrcodeSupportedFormats.CODE_128]
-                },
-                /* verbose= */ false
-            );
+        inputRef.current?.focus();
+    }, []);
 
-            scanner.render(
-                (decodedText) => {
-                    // Success callback
-                    setUidInput(decodedText);
-                    setIsScanning(false);
-                    scanner.clear();
+    // External barcode scanner listener
+    // Barcode guns send rapid keystrokes followed by Enter
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Ignore if user is typing in another input field (e.g., a modal)
+            const target = e.target as HTMLElement;
+            if (target.tagName === "INPUT" && target !== inputRef.current) return;
+            if (target.tagName === "TEXTAREA") return;
 
-                    // Auto submit logic
-                    searchVisitor(decodedText);
-                },
-                (errorMessage) => {
-                    // Error callback (ignore frequent scan errors)
-                }
-            );
+            // Clear previous timeout — chars must arrive within 50ms of each other
+            if (barcodeTimeoutRef.current) {
+                clearTimeout(barcodeTimeoutRef.current);
+            }
 
-            return () => {
-                scanner.clear().catch(error => console.error("Failed to clear scanner", error));
-            };
-        }
-    }, [isScanning]);
+            if (e.key === "Enter" && barcodeBufferRef.current.length >= 5) {
+                // Barcode scan complete
+                e.preventDefault();
+                const scannedValue = barcodeBufferRef.current.trim();
+                barcodeBufferRef.current = "";
+                setUidInput(scannedValue);
+                setScannerConnected(true);
+                searchVisitor(scannedValue);
+                return;
+            }
 
-    // Extracted search logic for auto-submit
-    const searchVisitor = async (uid: string) => {
+            // Only accumulate printable characters
+            if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+                barcodeBufferRef.current += e.key;
+
+                // Reset buffer after 100ms of no input (human typing is slower)
+                barcodeTimeoutRef.current = setTimeout(() => {
+                    barcodeBufferRef.current = "";
+                }, 100);
+            }
+        };
+
+        window.addEventListener("keydown", handleKeyDown);
+        return () => {
+            window.removeEventListener("keydown", handleKeyDown);
+            if (barcodeTimeoutRef.current) clearTimeout(barcodeTimeoutRef.current);
+        };
+    }, []);
+
+    // Search logic
+    const searchVisitor = useCallback(async (uid: string) => {
+        if (!uid.trim()) return;
         setLoading(true);
         setMessage(null);
         setVisitor(null);
 
         try {
             const { getVisitorByUid } = await import("@/app/actions/security");
-            const result = await getVisitorByUid(uid);
+            const result = await getVisitorByUid(uid.trim());
 
             if (result.error || !result.visitor) {
                 throw new Error(result.error || "Visitor not found or invalid UID.");
             }
 
             setVisitor(result.visitor as VisitorRequest);
-        } catch (err: any) {
-            setMessage({ type: 'error', text: err.message });
+        } catch (err: unknown) {
+            const errMsg = err instanceof Error ? err.message : "Search failed";
+            setMessage({ type: "error", text: errMsg });
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    // PIN authentication removed - direct access enabled
-
-    // ... Search and Action logic ...
     const handleSearch = async (e: React.FormEvent) => {
         e.preventDefault();
         searchVisitor(uidInput);
     };
 
-    const handleAction = async (action: 'check_in' | 'check_out') => {
+    const handleAction = async (action: "check_in" | "check_out") => {
         if (!visitor) return;
         setLoading(true);
         setMessage(null);
@@ -118,113 +116,214 @@ export default function SecurityDashboard() {
             if (result.error) throw new Error(result.error);
 
             setMessage({
-                type: 'success',
-                text: result.message || `Visitor ${action === 'check_in' ? 'checked in' : 'checked out'} successfully.`
+                type: "success",
+                text: result.message || `Visitor ${action === "check_in" ? "checked in" : "checked out"} successfully.`,
             });
 
             // Refresh local state with updates
             if (result.updates) {
-                setVisitor(prev => prev ? ({ ...prev, ...result.updates }) : null);
+                setVisitor((prev) => (prev ? { ...prev, ...result.updates } : null));
             } else {
-                // Fallback optimistic update
-                const updates: any = { status: action };
-                if (action === 'check_in') updates.check_in_time = new Date().toISOString();
+                const updates: Record<string, string> = { status: action };
+                if (action === "check_in") updates.check_in_time = new Date().toISOString();
                 else updates.check_out_time = new Date().toISOString();
-                setVisitor(prev => prev ? ({ ...prev, ...updates }) : null);
+                setVisitor((prev) => (prev ? { ...prev, ...updates } : null));
             }
-
-        } catch (err: any) {
-            setMessage({ type: 'error', text: err.message });
+        } catch (err: unknown) {
+            const errMsg = err instanceof Error ? err.message : "Action failed";
+            setMessage({ type: "error", text: errMsg });
         } finally {
             setLoading(false);
         }
     };
 
-    // Logout removed - direct access mode
+    const formatTime = (iso: string | null) => {
+        if (!iso) return "—";
+        return new Date(iso).toLocaleString("en-IN", {
+            dateStyle: "medium",
+            timeStyle: "short",
+        });
+    };
+
+    const getStatusLabel = (status: string | null) => {
+        switch (status) {
+            case "approved": return "Approved";
+            case "checked_in": return "Checked In";
+            case "checked_out": return "Checked Out";
+            case "pending": return "Pending";
+            case "rejected": return "Rejected";
+            default: return status || "Unknown";
+        }
+    };
+
+    const getStatusClass = (status: string | null) => {
+        switch (status) {
+            case "approved": return styles.statusApproved;
+            case "checked_in": return styles.statusCheckedIn;
+            case "checked_out": return styles.statusCheckedOut;
+            default: return styles.statusDefault;
+        }
+    };
 
     return (
         <div className="container">
             <header className={styles.header}>
-                <h1>Security Portal</h1>
-                <form action={logout}>
-                    <button type="submit" className="btn btn-danger">
-                        Logout
-                    </button>
-                </form>
+                <div className={styles.headerLeft}>
+                    <ShieldCheckIcon className={styles.headerIcon} />
+                    <div>
+                        <h1>Security Portal</h1>
+                        <p className={styles.headerSub}>Visitor Check-In & Check-Out</p>
+                    </div>
+                </div>
+                <div
+                    className={`${styles.scannerChip} ${scannerConnected ? styles.scannerActive : ""}`}
+                    title={scannerConnected ? "Barcode scanner detected" : "Waiting for barcode scanner..."}
+                >
+                    <SignalIcon className={styles.scannerIcon} />
+                    <span>{scannerConnected ? "Scanner Active" : "Scan Ready"}</span>
+                </div>
             </header>
 
             <div className={styles.dashboard}>
+                {/* Search Section */}
                 <div className={styles.searchSection}>
-                    <h2>Visitor Check-In/Out</h2>
                     <form onSubmit={handleSearch} className={styles.searchForm}>
-                        <div style={{ display: 'flex', gap: '10px', width: '100%' }}>
+                        <div className={styles.searchInputGroup}>
+                            <MagnifyingGlassIcon className={styles.searchIcon} />
                             <input
+                                ref={inputRef}
                                 type="text"
-                                placeholder="Enter Visitor UID or Scan"
-                                className="form-input"
+                                placeholder="Scan barcode or enter Visitor UID..."
+                                className={styles.searchInput}
                                 value={uidInput}
                                 onChange={(e) => setUidInput(e.target.value)}
-                                style={{ flex: 1 }}
+                                autoFocus
+                                aria-label="Visitor UID input"
                             />
-                            <button type="button" className="btn btn-outline" onClick={() => setIsScanning(!isScanning)} title="Toggle Camera Scanner">
-                                <QrCodeIcon style={{ width: 20, height: 20 }} />
-                            </button>
-                            <button type="submit" className="btn btn-primary" disabled={loading}>
-                                {loading ? "..." : <MagnifyingGlassIcon style={{ width: 20, height: 20 }} />}
+                            <button type="submit" className={styles.searchBtn} disabled={loading || !uidInput.trim()}>
+                                {loading ? "Searching..." : "Look Up"}
                             </button>
                         </div>
                     </form>
 
-                    {isScanning && (
-                        <div id="reader" style={{ marginTop: '1rem', width: '100%' }}></div>
-                    )}
-
                     {message && (
-                        <div className={`${styles.message} ${message.type === 'error' ? styles.error : styles.success}`}>
-                            {message.text}
+                        <div className={`${styles.toast} ${message.type === "error" ? styles.toastError : styles.toastSuccess}`} role="alert">
+                            {message.type === "error"
+                                ? <ExclamationTriangleIcon className={styles.toastIcon} />
+                                : <CheckCircleIcon className={styles.toastIcon} />
+                            }
+                            <span>{message.text}</span>
                         </div>
                     )}
                 </div>
 
+                {/* Visitor Card */}
                 {visitor && (
                     <div className={styles.visitorCard}>
-                        <div className={styles.photoWrapper}>
-                            <img src={visitor.photo_url || "/placeholder-user.png"} alt={visitor.name} className={styles.photo} />
-                            <div className={`badge ${visitor.status === 'checked_in' ? styles.badgeActive : styles.badgeInactive}`}>
-                                {visitor.status.toUpperCase().replace('_', ' ')}
-                            </div>
+                        {/* Card Header with status */}
+                        <div className={styles.cardHeader}>
+                            <span className={`${styles.statusChip} ${getStatusClass(visitor.status)}`}>
+                                {getStatusLabel(visitor.status)}
+                            </span>
+                            <span className={styles.uid}>{visitor.visitor_uid}</span>
                         </div>
 
-                        <div className={styles.info}>
-                            <h3>{visitor.name}</h3>
-                            <p><strong>UID:</strong> {visitor.visitor_uid}</p>
-                            <p><strong>Visiting:</strong> {visitor.department}</p>
-                            <p><strong>Purpose:</strong> {visitor.purpose}</p>
+                        {/* Card Body */}
+                        <div className={styles.cardBody}>
+                            <div className={styles.photoCol}>
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={visitor.photo_url || "/placeholder-user.png"} alt={visitor.name} className={styles.photo} />
+                            </div>
 
-                            <div className={styles.actionSection} style={{ marginTop: '1rem', borderTop: '1px solid #eee', paddingTop: '1rem' }}>
-                                <div className={styles.actions}>
-                                    {visitor.status === 'approved' && (
-                                        <div style={{ width: '100%' }}>
-                                            <p style={{ marginBottom: '0.5rem', fontSize: '0.9rem', color: '#666' }}>Verify details above before checking in.</p>
-                                            <button onClick={() => handleAction('check_in')} className="btn btn-primary" disabled={loading} style={{ width: '100%', fontSize: '1.1rem' }}>
-                                                <CheckCircleIcon style={{ width: 24, height: 24 }} /> Verify & Check In
-                                            </button>
+                            <div className={styles.detailsCol}>
+                                <h3 className={styles.visitorName}>{visitor.name}</h3>
+                                <div className={styles.detailGrid}>
+                                    <div className={styles.detailItem}>
+                                        <span className={styles.detailLabel}>Department</span>
+                                        <span className={styles.detailValue}>{visitor.department}</span>
+                                    </div>
+                                    <div className={styles.detailItem}>
+                                        <span className={styles.detailLabel}>Purpose</span>
+                                        <span className={styles.detailValue}>{visitor.purpose || "—"}</span>
+                                    </div>
+                                    {visitor.organization && (
+                                        <div className={styles.detailItem}>
+                                            <span className={styles.detailLabel}>Organization</span>
+                                            <span className={styles.detailValue}>{visitor.organization}</span>
                                         </div>
                                     )}
-                                    {visitor.status === 'checked_in' && (
-                                        <button onClick={() => handleAction('check_out')} className="btn btn-secondary" style={{ backgroundColor: '#dc3545', width: '100%', fontSize: '1.1rem' }} disabled={loading}>
-                                            <ArrowRightOnRectangleIcon style={{ width: 24, height: 24 }} /> Check Out
-                                        </button>
-                                    )}
-                                    {visitor.status === 'checked_out' && (
-                                        <div className={styles.completedState} style={{ textAlign: 'center', color: 'green' }}>
-                                            <CheckCircleIcon style={{ width: 48, height: 48, margin: '0 auto', color: 'green' }} />
-                                            <h3>Visit Completed</h3>
-                                            <p>Time recorded.</p>
+                                    {visitor.phone && (
+                                        <div className={styles.detailItem}>
+                                            <span className={styles.detailLabel}>Phone</span>
+                                            <span className={styles.detailValue}>{visitor.phone}</span>
                                         </div>
                                     )}
                                 </div>
                             </div>
+                        </div>
+
+                        {/* Timestamps */}
+                        {(visitor.check_in_time || visitor.check_out_time) && (
+                            <div className={styles.timestamps}>
+                                {visitor.check_in_time && (
+                                    <div className={styles.timeItem}>
+                                        <ClockIcon className={styles.timeIcon} />
+                                        <div>
+                                            <span className={styles.timeLabel}>Check-In</span>
+                                            <span className={styles.timeValue}>{formatTime(visitor.check_in_time)}</span>
+                                        </div>
+                                    </div>
+                                )}
+                                {visitor.check_out_time && (
+                                    <div className={styles.timeItem}>
+                                        <ArrowRightStartOnRectangleIcon className={styles.timeIcon} />
+                                        <div>
+                                            <span className={styles.timeLabel}>Check-Out</span>
+                                            <span className={styles.timeValue}>{formatTime(visitor.check_out_time)}</span>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        )}
+
+                        {/* Action Footer */}
+                        <div className={styles.cardFooter}>
+                            {visitor.status === "approved" && (
+                                <>
+                                    <p className={styles.actionHint}>Please verify visitor details before proceeding.</p>
+                                    <button onClick={() => handleAction("check_in")} className={styles.btnCheckIn} disabled={loading}>
+                                        <CheckCircleIcon className={styles.btnIcon} />
+                                        {loading ? "Processing..." : "Check In Visitor"}
+                                    </button>
+                                </>
+                            )}
+                            {visitor.status === "checked_in" && (
+                                <button onClick={() => handleAction("check_out")} className={styles.btnCheckOut} disabled={loading}>
+                                    <ArrowRightOnRectangleIcon className={styles.btnIcon} />
+                                    {loading ? "Processing..." : "Check Out Visitor"}
+                                </button>
+                            )}
+                            {visitor.status === "checked_out" && (
+                                <div className={styles.completedBanner}>
+                                    <CheckCircleIcon className={styles.completedIcon} />
+                                    <div>
+                                        <strong>Visit Completed</strong>
+                                        <span>All timestamps have been recorded successfully.</span>
+                                    </div>
+                                </div>
+                            )}
+                            {visitor.status === "pending" && (
+                                <div className={styles.pendingBanner}>
+                                    <ExclamationTriangleIcon className={styles.pendingIcon} />
+                                    <span>This visit request is still pending approval from the department admin.</span>
+                                </div>
+                            )}
+                            {visitor.status === "rejected" && (
+                                <div className={styles.rejectedBanner}>
+                                    <ExclamationTriangleIcon className={styles.rejectedIcon} />
+                                    <span>This visit request has been rejected. Entry is not permitted.</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}

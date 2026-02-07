@@ -1,0 +1,570 @@
+/* ─── CalendarTimePicker — shadcn Calendar-With-Time-Presets style ─── */
+
+/* Wrapper */
+.pickerWrapper {
+    position: relative;
+    width: 100%;
+}
+
+.pickerLabel {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    margin-bottom: 0.4rem;
+}
+
+.labelIcon {
+    width: 18px;
+    height: 18px;
+    color: var(--secondary-color);
+    flex-shrink: 0;
+}
+
+.pickerHint {
+    display: block;
+    margin-top: 0.3rem;
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+/* ─── Trigger ─── */
+.triggerRow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    width: 100%;
+    position: relative;
+}
+
+.trigger {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    width: 100%;
+    flex: 1;
+    min-width: 0;
+    padding: 0.7rem 0.9rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--surface-color);
+    color: var(--text-primary);
+    font-size: 0.92rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    text-align: left;
+}
+
+.trigger:hover {
+    border-color: var(--primary-color);
+}
+
+.triggerActive {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.08);
+}
+
+.triggerIcon {
+    width: 20px;
+    height: 20px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.triggerValue {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    padding-right: 1.5rem;
+}
+
+.triggerPlaceholder {
+    flex: 1;
+    color: var(--text-muted);
+}
+
+.clearBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    cursor: pointer;
+    color: var(--text-muted);
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+    padding: 0;
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 1;
+}
+
+.clearBtn:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--text-primary);
+}
+
+.clearIcon {
+    width: 16px;
+    height: 16px;
+}
+
+/* ─── Dropdown Panel ─── */
+.dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    left: 0;
+    z-index: 100;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow:
+        0 10px 38px -10px rgba(22, 23, 24, 0.12),
+        0 10px 20px -15px rgba(22, 23, 24, 0.08);
+    animation: calPickerFadeIn 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+    width: max-content;
+    max-width: calc(100vw - 2rem);
+}
+
+@keyframes calPickerFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-6px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.dropdownInner {
+    display: flex;
+}
+
+/* ─── Calendar Section ─── */
+.calendarSection {
+    padding: 1rem;
+    border-right: 1px solid var(--border-color);
+    min-width: 290px;
+}
+
+/* Month Navigation */
+.calendarNav {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.75rem;
+}
+
+.navBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.navBtn:hover:not(:disabled) {
+    background: var(--border-color);
+}
+
+.navBtn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.navIcon {
+    width: 16px;
+    height: 16px;
+}
+
+.monthLabel {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: var(--text-primary);
+    user-select: none;
+}
+
+/* Weekday Header */
+.weekdayRow {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 0;
+    margin-bottom: 0.25rem;
+}
+
+.weekdayCell {
+    text-align: center;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.3rem 0;
+    user-select: none;
+}
+
+/* Day Grid */
+.dayGrid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.dayCell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 0.88rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s;
+    margin: 0 auto;
+}
+
+.dayCell:hover:not(:disabled) {
+    background: var(--border-color);
+}
+
+.dayOutside {
+    color: var(--text-muted);
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+.dayDisabled {
+    color: var(--text-muted);
+    opacity: 0.35;
+    cursor: not-allowed;
+    text-decoration: line-through;
+}
+
+.dayToday {
+    background: rgba(255, 153, 51, 0.12);
+    color: var(--secondary-color);
+    font-weight: 700;
+}
+
+.daySelected {
+    background: var(--primary-color) !important;
+    color: #fff !important;
+    font-weight: 700;
+    border-radius: var(--radius-sm);
+}
+
+/* ─── Time Section ─── */
+.timeSection {
+    display: flex;
+    flex-direction: column;
+    width: 160px;
+    max-height: 380px;
+}
+
+.timeSectionHeader {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.85rem 1rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+
+.timeHeaderIcon {
+    width: 16px;
+    height: 16px;
+    color: var(--secondary-color);
+}
+
+.timeSlotsList {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    scroll-behavior: smooth;
+}
+
+/* Scrollbar */
+.timeSlotsList::-webkit-scrollbar {
+    width: 4px;
+}
+
+.timeSlotsList::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.timeSlotsList::-webkit-scrollbar-thumb {
+    background: var(--border-color);
+    border-radius: 4px;
+}
+
+.timeSlot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3rem;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.timeSlot:hover {
+    background: var(--border-color);
+    border-color: var(--text-muted);
+}
+
+.timeSlotSelected {
+    background: var(--primary-color) !important;
+    color: #fff !important;
+    border-color: var(--primary-color) !important;
+    font-weight: 600;
+}
+
+.timeCheckIcon {
+    width: 14px;
+    height: 14px;
+}
+
+/* ─── Footer ─── */
+.dropdownFooter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.85rem 1rem;
+    border-top: 1px solid var(--border-color);
+    background: var(--surface-color);
+}
+
+.footerSummary {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    flex: 1;
+}
+
+.footerSummary strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.doneBtn {
+    padding: 0.45rem 1.2rem;
+    background: var(--primary-color);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+}
+
+.doneBtn:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.doneBtn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 600px) {
+    .dropdown {
+        position: fixed;
+        top: auto;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        max-width: 100%;
+        border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+        animation: calPickerSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes calPickerSlideUp {
+        from {
+            opacity: 0;
+            transform: translateY(100%);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .dropdownInner {
+        flex-direction: column;
+    }
+
+    .calendarSection {
+        border-right: none;
+        border-bottom: 1px solid var(--border-color);
+        min-width: unset;
+        padding: 0.75rem;
+    }
+
+    .dayCell {
+        width: 40px;
+        height: 40px;
+        font-size: 0.9rem;
+    }
+
+    .timeSection {
+        width: 100%;
+        max-height: 200px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .timeSlotsList {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        gap: 0.4rem;
+        padding: 0.5rem 0.75rem;
+        scroll-padding: 0 0.75rem;
+    }
+
+    .timeSlot {
+        min-width: fit-content;
+        padding: 0.5rem 0.75rem;
+    }
+
+    .dropdownFooter {
+        flex-direction: column;
+        gap: 0.6rem;
+        padding: 0.75rem 1rem;
+        /* Ensure the footer is above phone's safe area */
+        padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+    }
+
+    .doneBtn {
+        width: 100%;
+        padding: 0.7rem 1rem;
+    }
+}
+
+/* ─── DARK MODE ─── */
+:global(:root.dark) .trigger {
+    background-color: var(--surface-color);
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+:global(:root.dark) .trigger:hover {
+    border-color: var(--secondary-color);
+}
+
+:global(:root.dark) .triggerActive {
+    border-color: var(--secondary-color);
+    box-shadow: 0 0 0 3px rgba(255, 153, 51, 0.12);
+}
+
+:global(:root.dark) .clearBtn:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+:global(:root.dark) .dropdown {
+    background: var(--surface-color);
+    border-color: var(--border-color);
+    box-shadow:
+        0 10px 38px -10px rgba(0, 0, 0, 0.5),
+        0 10px 20px -15px rgba(0, 0, 0, 0.35);
+}
+
+:global(:root.dark) .navBtn {
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+:global(:root.dark) .navBtn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+:global(:root.dark) .dayCell:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.06);
+}
+
+:global(:root.dark) .dayToday {
+    background: rgba(255, 153, 51, 0.18);
+    color: var(--secondary-color);
+}
+
+:global(:root.dark) .daySelected {
+    background: var(--secondary-color) !important;
+    color: #1A202C !important;
+}
+
+:global(:root.dark) .timeSlot {
+    border-color: var(--border-color);
+    color: var(--text-primary);
+}
+
+:global(:root.dark) .timeSlot:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: var(--text-muted);
+}
+
+:global(:root.dark) .timeSlotSelected {
+    background: var(--secondary-color) !important;
+    color: #1A202C !important;
+    border-color: var(--secondary-color) !important;
+}
+
+:global(:root.dark) .calendarSection {
+    border-right-color: var(--border-color);
+}
+
+:global(:root.dark) .timeSectionHeader {
+    border-bottom-color: var(--border-color);
+}
+
+:global(:root.dark) .dropdownFooter {
+    background: var(--surface-color);
+    border-top-color: var(--border-color);
+}
+
+:global(:root.dark) .doneBtn {
+    background: var(--secondary-color);
+    color: #1A202C;
+}
+
+:global(:root.dark) .timeSlotsList::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.15);
+}

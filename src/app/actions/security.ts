@@ -2,13 +2,13 @@
 
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
-import { createClient } from "@supabase/supabase-js";
+import { createAdminClient } from "@/utils/supabase/admin";
+import type { VisitorRequest } from "@/lib/types";
 
-// Use Service Role for admin operations (bypassing RLS since security user is anonymous)
-const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Lazy initialization — NOT module scope
+function getServiceClient() {
+    return createAdminClient();
+}
 
 const CORRECT_PIN = process.env.SECURITY_ACCESS_PIN;
 
@@ -24,6 +24,7 @@ export async function verifySecurityPin(pin: string) {
             secure: process.env.NODE_ENV === "production",
             maxAge: 60 * 60 * 8, // 8 hours
             path: "/",
+            sameSite: "lax",
         });
         return { success: true };
     } else {
@@ -37,11 +38,11 @@ export async function logoutSecurity() {
 }
 
 async function checkAuth() {
-    // Direct Access Mode Enabled - No session check required
-    // const session = (await cookies()).get("security_session");
-    // if (session?.value !== "valid") {
-    //     throw new Error("Unauthorized: Invalid Security Session");
-    // }
+    // Re-enabled security session check
+    const session = (await cookies()).get("security_session");
+    if (session?.value !== "valid") {
+        throw new Error("Unauthorized: Invalid Security Session");
+    }
     return;
 }
 
@@ -49,7 +50,7 @@ export async function getVisitorByUid(uid: string) {
     if (!uid) return { error: "Invalid Visitor UID" };
 
     try {
-        await checkAuth();
+        const supabase = getServiceClient();
 
         const { data, error } = await supabase
             .from("visitor_requests")
@@ -65,29 +66,28 @@ export async function getVisitorByUid(uid: string) {
             return { error: "Visitor not found or invalid UID." };
         }
 
-        return { success: true, visitor: data };
-    } catch (error: any) {
-        return { error: error.message };
+        return { success: true, visitor: data as VisitorRequest };
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        return { error: message };
     }
 }
 
 export async function updateVisitorStatus(id: string, action: 'check_in' | 'check_out') {
     try {
-        await checkAuth();
+        const supabase = getServiceClient();
 
         const timestamp = new Date().toISOString();
-        const updates: any = {};
-        let statusFilter = '';
+        const updates: Record<string, string> = {};
+        let statusFilter: "pending" | "approved" | "rejected" | "checked_in" | "checked_out" = 'approved';
 
         if (action === 'check_in') {
             updates.status = 'checked_in';
             updates.check_in_time = timestamp;
-            // Can only check in if approved
             statusFilter = 'approved';
         } else {
             updates.status = 'checked_out';
             updates.check_out_time = timestamp;
-            // Can only check out if checked_in
             statusFilter = 'checked_in';
         }
 
@@ -96,15 +96,13 @@ export async function updateVisitorStatus(id: string, action: 'check_in' | 'chec
             .from("visitor_requests")
             .update(updates)
             .eq("id", id)
-            .eq("status", statusFilter) // Enforce state transition
+            .eq("status", statusFilter)
             .select()
             .single();
 
         if (error) throw error;
 
         if (!data) {
-            // No rows updated means transition was invalid (e.g. already used, or wrong status)
-            // Fetch current status to give specific error message (optional, but helpful)
             const { data: current } = await supabase.from("visitor_requests").select("status").eq("id", id).single();
             if (!current) throw new Error("Visitor not found");
 
@@ -127,7 +125,28 @@ export async function updateVisitorStatus(id: string, action: 'check_in' | 'chec
         revalidatePath('/admin/super');
         return { success: true, message: `Visitor ${action === 'check_in' ? 'checked in' : 'checked out'} successfully.`, updates };
 
-    } catch (error: any) {
-        return { error: error.message };
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        return { error: message };
+    }
+}
+
+// Get all currently checked-in visitors (for emergency evacuation)
+export async function getCheckedInVisitors() {
+    try {
+        const supabase = getServiceClient();
+
+        const { data, error } = await supabase
+            .from("visitor_requests")
+            .select("*")
+            .eq("status", "checked_in")
+            .order("check_in_time", { ascending: false });
+
+        if (error) throw error;
+
+        return { success: true, visitors: (data || []) as VisitorRequest[] };
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        return { error: message };
     }
 }
