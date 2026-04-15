@@ -110,7 +110,7 @@ export default function CalendarTimePicker({
     const timePanelRef = useRef<HTMLDivElement>(null);
 
     // Calendar view state
-    const today = useMemo(() => new Date(), []);
+    const today = new Date();
     const effectiveMinDate = minDate || today;
     const minDateKey = toDateKey(effectiveMinDate);
 

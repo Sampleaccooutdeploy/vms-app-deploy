@@ -39,16 +39,124 @@ export const DEPARTMENTS = [
 
 export type Department = typeof DEPARTMENTS[number];
 
+// Designation suggestions (university/institutional context)
+export const DESIGNATIONS = [
+    // Academic
+    "Professor",
+    "Associate Professor",
+    "Assistant Professor",
+    "Senior Professor",
+    "Visiting Professor",
+    "Adjunct Professor",
+    "Emeritus Professor",
+    "Guest Lecturer",
+    "Lecturer",
+    "Senior Lecturer",
+    "Research Scholar",
+    "Research Associate",
+    "Post-Doctoral Fellow",
+    "Teaching Assistant",
+    "Lab Instructor",
+    // Students
+    "Student",
+    "PhD Scholar",
+    "M.Tech Student",
+    "B.Tech Student",
+    "MBA Student",
+    "MCA Student",
+    // Administrative
+    "Dean",
+    "Head of Department",
+    "Registrar",
+    "Controller of Examinations",
+    "Director",
+    "Deputy Director",
+    "Coordinator",
+    "Administrative Officer",
+    "Office Superintendent",
+    "Clerk",
+    "Accountant",
+    "Cashier",
+    // Technical
+    "System Administrator",
+    "Lab Technician",
+    "Technical Assistant",
+    "IT Manager",
+    "Network Engineer",
+    "Software Engineer",
+    "Developer",
+    // Management
+    "Managing Director",
+    "CEO",
+    "CTO",
+    "CFO",
+    "General Manager",
+    "Manager",
+    "Senior Manager",
+    "Project Manager",
+    "Team Lead",
+    "Supervisor",
+    // External / Visitors
+    "Consultant",
+    "Auditor",
+    "Inspector",
+    "Vendor",
+    "Contractor",
+    "Parent",
+    "Guardian",
+    "Alumni",
+    "Journalist",
+    "Photographer",
+    // Government
+    "Government Official",
+    "IAS Officer",
+    "IPS Officer",
+    "District Collector",
+    "Block Development Officer",
+    // Library & Support
+    "Librarian",
+    "Assistant Librarian",
+    "Warden",
+    "Security Officer",
+    "Estate Officer",
+    "Transport Officer",
+    // Medical
+    "Doctor",
+    "Medical Officer",
+    "Nurse",
+    "Counselor",
+    // Others
+    "Entrepreneur",
+    "Freelancer",
+    "Self-Employed",
+    "Retired Professional",
+    "Homemaker",
+    "Other",
+] as const;
+
 // Roles
 export const ROLES = ["super_admin", "department_admin", "security"] as const;
 export type UserRole = typeof ROLES[number];
+
+// Identity Proof Types
+export const ID_PROOF_TYPES = [
+    { value: "aadhar", label: "Aadhar Card", pattern: /^\d{12}$/, placeholder: "Enter 12-digit Aadhar number", maxLength: 14, hint: "12-digit number (e.g. 1234 5678 9012)" },
+    { value: "pan", label: "PAN Card", pattern: /^[A-Z]{5}\d{4}[A-Z]$/, placeholder: "Enter PAN (e.g. ABCDE1234F)", maxLength: 10, hint: "Format: ABCDE1234F" },
+    { value: "passport", label: "Passport", pattern: /^[A-Z]\d{7}$/, placeholder: "Enter passport number (e.g. A1234567)", maxLength: 8, hint: "1 letter followed by 7 digits" },
+    { value: "driving_license", label: "Driving License", pattern: /^[A-Z]{2}\d{2}\s?\d{11}$/, placeholder: "Enter DL number (e.g. TN01 20230001234)", maxLength: 16, hint: "State code + 13 digits" },
+    { value: "voter_id", label: "Voter ID", pattern: /^[A-Z]{3}\d{7}$/, placeholder: "Enter Voter ID (e.g. ABC1234567)", maxLength: 10, hint: "3 letters followed by 7 digits" },
+    { value: "college_id", label: "College / Employee ID", pattern: /^.{3,20}$/, placeholder: "Enter your institutional ID", maxLength: 20, hint: "Institutional ID as printed on card" },
+    { value: "other", label: "Other Government ID", pattern: /^.{3,30}$/, placeholder: "Enter ID number", maxLength: 30, hint: "Any valid government-issued ID" },
+] as const;
+
+export type IdProofType = typeof ID_PROOF_TYPES[number]["value"];
 
 // Visit Statuses
 export const VISIT_STATUSES = ["pending", "approved", "rejected", "checked_in", "checked_out"] as const;
 export type VisitStatus = typeof VISIT_STATUSES[number];
 
 // Password
-export const MIN_PASSWORD_LENGTH = 6;
+export const MIN_PASSWORD_LENGTH = 8;
 
 // i18n supported locales
 export const SUPPORTED_LOCALES = ["en", "ta", "hi"] as const;

@@ -44,6 +44,18 @@ export default async function DepartmentDashboard() {
         .gte("created_at", thirtyDaysAgo.toISOString())
         .order("created_at", { ascending: false });
 
+    // 4. Fetch In/Out Visitors (checked_in + checked_out today)
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+
+    const { data: inOutVisitors } = await supabase
+        .from("visitor_requests")
+        .select("*")
+        .eq("department", profile.department)
+        .in("status", ["checked_in", "checked_out"])
+        .or(`check_in_time.gte.${startOfDay},check_out_time.gte.${startOfDay}`)
+        .order("check_in_time", { ascending: false });
+
 
 
     return (
@@ -69,6 +81,7 @@ export default async function DepartmentDashboard() {
             <DepartmentClient
                 pendingRequests={pendingRequests || []}
                 approvedVisitors={approvedVisitors || []}
+                inOutVisitors={inOutVisitors || []}
                 department={profile.department}
             />
 

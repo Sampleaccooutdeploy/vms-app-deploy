@@ -4,16 +4,19 @@ import { createClient } from "@/utils/supabase/server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { UID_PREFIX, UID_RANDOM_LENGTH, UID_MONTH_CODES } from "@/lib/constants";
+import { randomInt } from "crypto";
+import { logAuditEvent } from "./audit";
 
 /**
  * Generate a unique visitor UID with retry logic to avoid collisions.
  * Format: SCSVMV######M (e.g. SCSVMV102345J)
+ * Uses crypto.randomInt for cryptographically secure randomness.
  */
 function generateUID(): string {
     const currentMonthCode = UID_MONTH_CODES[new Date().getMonth()];
     const min = Math.pow(10, UID_RANDOM_LENGTH - 1);
     const max = Math.pow(10, UID_RANDOM_LENGTH) - 1;
-    const uniqueNumber = Math.floor(min + Math.random() * (max - min + 1));
+    const uniqueNumber = randomInt(min, max + 1);
     return `${UID_PREFIX}${uniqueNumber}${currentMonthCode}`;
 }
 
@@ -102,7 +105,17 @@ export async function approveVisitor(formData: FormData) {
         console.error("Failed to send approval email:", emailResult.error);
     }
 
-    // 6. Revalidate Dashboard
+    // 6. Audit Log
+    logAuditEvent({
+        action: "approve_visitor",
+        performed_by: user.id,
+        performed_by_email: user.email || "unknown",
+        target_id: requestId,
+        target_type: "visitor",
+        details: `Approved visitor ${request.name} with UID ${uid}`,
+    });
+
+    // 7. Revalidate Dashboard
     revalidatePath("/admin/dept");
     return { success: true, message: `Visitor approved with UID: ${uid}` };
 }
@@ -154,6 +167,16 @@ export async function rejectVisitor(formData: FormData) {
     if (error) {
         return { error: "Failed to reject request: " + error.message };
     }
+
+    // Audit Log
+    logAuditEvent({
+        action: "reject_visitor",
+        performed_by: user.id,
+        performed_by_email: user.email || "unknown",
+        target_id: requestId,
+        target_type: "visitor",
+        details: `Rejected visitor request. Reason: ${reason}`,
+    });
 
     revalidatePath("/admin/dept");
     return { success: true, message: "Visitor request rejected." };

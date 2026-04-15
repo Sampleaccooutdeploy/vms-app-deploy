@@ -62,8 +62,8 @@ function LoginForm() {
         setLoading(true);
         setError(null);
 
-        if (password.length < 6) {
-            setError("Password must be at least 6 characters.");
+        if (password.length < 8) {
+            setError("Password must be at least 8 characters.");
             setLoading(false);
             return;
         }
@@ -75,6 +75,14 @@ function LoginForm() {
                 localStorage.removeItem("rememberedEmail");
             }
 
+            // Server-side rate-limit gate
+            const { loginUser } = await import("@/app/actions/login");
+            const gateResult = await loginUser(email, password);
+            if (!gateResult.success) {
+                throw new Error(gateResult.error || "Login failed.");
+            }
+
+            // Proceed with Supabase auth only after rate-limit gate passes
             const { data, error: authError } = await supabase.auth.signInWithPassword({ email, password });
             if (authError) throw new Error("Incorrect email or password. Please try again.");
 

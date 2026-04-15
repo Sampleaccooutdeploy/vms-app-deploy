@@ -142,7 +142,7 @@ export async function sendApprovalEmail(to: string, visitorName: string, uid: st
                     <td style="text-align: center; padding: 20px 12px; background-color: #ffffff; border: 2px dashed #cbd5e1; border-radius: 8px;">
                         <p style="margin: 0 0 12px; color: #64748b; font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Scan at Security Gate</p>
                         <!-- Use raw UID for barcode API url -->
-                        <img src="https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(uid)}&scale=3&includetext" alt="Visitor Barcode" style="max-width: 100%; width: auto; height: auto; display: block; margin: 0 auto;" />
+                        <img src="https://bwipjs-api.metafloor.com/?bcid=code128&text=${encodeURIComponent(uid)}&scale=3&height=20&includetext&backgroundcolor=ffffff&barcolor=000000" alt="Visitor Barcode - ${safeUid}" style="max-width: 100%; width: auto; height: auto; display: block; margin: 0 auto;" />
                     </td>
                 </tr>
             </table>

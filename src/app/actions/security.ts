@@ -3,6 +3,8 @@
 import { cookies } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { createAdminClient } from "@/utils/supabase/admin";
+import { rateLimit, getRateLimitKey } from "@/lib/rate-limit";
+import { createHmac } from "crypto";
 import type { VisitorRequest } from "@/lib/types";
 
 // Lazy initialization — NOT module scope
@@ -11,18 +13,63 @@ function getServiceClient() {
 }
 
 const CORRECT_PIN = process.env.SECURITY_ACCESS_PIN;
+const SESSION_DURATION_SECONDS = 60 * 60 * 8; // 8 hours
+
+/**
+ * Create an HMAC-signed session token with embedded expiry.
+ * Format: "expiry:hmac_hex"
+ */
+function createSignedToken(): string {
+    const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || "fallback-secret";
+    const expiry = Math.floor(Date.now() / 1000) + SESSION_DURATION_SECONDS;
+    const payload = `security_session:${expiry}`;
+    const hmac = createHmac("sha256", secret).update(payload).digest("hex");
+    return `${expiry}:${hmac}`;
+}
+
+/**
+ * Verify an HMAC-signed session token.
+ */
+function verifySignedToken(token: string): boolean {
+    const secret = process.env.SUPABASE_SERVICE_ROLE_KEY || "fallback-secret";
+    const parts = token.split(":");
+    if (parts.length !== 2) return false;
+
+    const [expiryStr, providedHmac] = parts;
+    const expiry = parseInt(expiryStr, 10);
+    if (isNaN(expiry) || Math.floor(Date.now() / 1000) > expiry) return false;
+
+    const payload = `security_session:${expiry}`;
+    const expectedHmac = createHmac("sha256", secret).update(payload).digest("hex");
+
+    // Timing-safe comparison
+    if (providedHmac.length !== expectedHmac.length) return false;
+    let mismatch = 0;
+    for (let i = 0; i < providedHmac.length; i++) {
+        mismatch |= providedHmac.charCodeAt(i) ^ expectedHmac.charCodeAt(i);
+    }
+    return mismatch === 0;
+}
 
 export async function verifySecurityPin(pin: string) {
     if (!CORRECT_PIN) {
         return { success: false, error: "Server Configuration Error: PIN not set." };
     }
 
+    // Rate limit: 5 attempts per 15 minutes
+    const rateLimitKey = getRateLimitKey("security-pin", "global");
+    const { allowed } = rateLimit(rateLimitKey, 5, 15 * 60 * 1000);
+    if (!allowed) {
+        return { success: false, error: "Too many attempts. Please try again in 15 minutes." };
+    }
+
     if (pin === CORRECT_PIN) {
-        // Set HTTP-only cookie
-        (await cookies()).set("security_session", "valid", {
+        // Set HTTP-only cookie with HMAC-signed token
+        const token = createSignedToken();
+        (await cookies()).set("security_session", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
-            maxAge: 60 * 60 * 8, // 8 hours
+            maxAge: SESSION_DURATION_SECONDS,
             path: "/",
             sameSite: "lax",
         });
@@ -38,18 +85,29 @@ export async function logoutSecurity() {
 }
 
 async function checkAuth() {
-    // Re-enabled security session check
     const session = (await cookies()).get("security_session");
-    if (session?.value !== "valid") {
+    if (!session?.value || !verifySignedToken(session.value)) {
         throw new Error("Unauthorized: Invalid Security Session");
     }
     return;
+}
+
+/** Mask sensitive ID proof number — only last 4 digits visible */
+function maskIdProof(record: { id_proof_type?: string | null; id_proof_number?: string | null }) {
+    if (!record.id_proof_number) return;
+    const raw = record.id_proof_number.replace(/\s/g, "");
+    if (record.id_proof_type === "aadhar" && raw.length === 12) {
+        record.id_proof_number = `XXXX XXXX ${raw.slice(8)}`;
+    } else if (raw.length > 4) {
+        record.id_proof_number = "X".repeat(raw.length - 4) + raw.slice(-4);
+    }
 }
 
 export async function getVisitorByUid(uid: string) {
     if (!uid) return { error: "Invalid Visitor UID" };
 
     try {
+        await checkAuth();
         const supabase = getServiceClient();
 
         const { data, error } = await supabase
@@ -66,6 +124,9 @@ export async function getVisitorByUid(uid: string) {
             return { error: "Visitor not found or invalid UID." };
         }
 
+        // Mask sensitive ID proof number before sending to client
+        maskIdProof(data);
+
         return { success: true, visitor: data as VisitorRequest };
     } catch (error: unknown) {
         const message = error instanceof Error ? error.message : "Unknown error";
@@ -75,6 +136,7 @@ export async function getVisitorByUid(uid: string) {
 
 export async function updateVisitorStatus(id: string, action: 'check_in' | 'check_out') {
     try {
+        await checkAuth();
         const supabase = getServiceClient();
 
         const timestamp = new Date().toISOString();
@@ -134,6 +196,7 @@ export async function updateVisitorStatus(id: string, action: 'check_in' | 'chec
 // Get all currently checked-in visitors (for emergency evacuation)
 export async function getCheckedInVisitors() {
     try {
+        await checkAuth();
         const supabase = getServiceClient();
 
         const { data, error } = await supabase
@@ -144,7 +207,49 @@ export async function getCheckedInVisitors() {
 
         if (error) throw error;
 
-        return { success: true, visitors: (data || []) as VisitorRequest[] };
+        // Mask sensitive ID proof numbers for all returned visitors
+        const visitors = (data || []) as VisitorRequest[];
+        visitors.forEach(maskIdProof);
+
+        return { success: true, visitors };
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        return { error: message };
+    }
+}
+
+// Get all visitor activity for today (checked-in + checked-out)
+export async function getDailyActivity() {
+    try {
+        await checkAuth();
+        const supabase = getServiceClient();
+
+        // Build today's date range in UTC (start of day → end of day)
+        const now = new Date();
+        const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).toISOString();
+
+        // Fetch visitors who checked in today OR checked out today
+        const { data, error } = await supabase
+            .from("visitor_requests")
+            .select("*")
+            .in("status", ["checked_in", "checked_out"])
+            .or(`check_in_time.gte.${startOfDay},check_out_time.gte.${startOfDay}`)
+            .order("check_in_time", { ascending: false });
+
+        if (error) throw error;
+
+        // Filter to only today's activity (belt & suspenders)
+        const visitors = (data || []).filter((v) => {
+            const cin = v.check_in_time ? new Date(v.check_in_time) : null;
+            const cout = v.check_out_time ? new Date(v.check_out_time) : null;
+            return (cin && cin >= new Date(startOfDay) && cin < new Date(endOfDay))
+                || (cout && cout >= new Date(startOfDay) && cout < new Date(endOfDay));
+        }) as VisitorRequest[];
+
+        visitors.forEach(maskIdProof);
+
+        return { success: true, visitors };
     } catch (error: unknown) {
         const message = error instanceof Error ? error.message : "Unknown error";
         return { error: message };

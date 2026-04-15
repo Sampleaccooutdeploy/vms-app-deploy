@@ -5,6 +5,7 @@ import { createAdminClient } from "@/utils/supabase/admin";
 import { revalidatePath } from "next/cache";
 import { createUserSchema } from "@/lib/validations";
 import type { Profile } from "@/lib/types";
+import { logAuditEvent } from "./audit";
 
 export async function deleteUser(userId: string) {
     try {
@@ -42,6 +43,17 @@ export async function deleteUser(userId: string) {
         }
 
         revalidatePath("/admin/super");
+
+        // Audit log
+        logAuditEvent({
+            action: "delete_user",
+            performed_by: user.id,
+            performed_by_email: user.email || "unknown",
+            target_id: userId,
+            target_type: "user",
+            details: `Deleted user ${userId}`,
+        });
+
         return { success: true, message: "User deleted successfully." };
 
     } catch (error: unknown) {
@@ -118,54 +130,10 @@ export async function createUser(formData: FormData) {
         email_confirm: true
     });
 
-    // If user already exists, update their password instead
-    if (createError && createError.message.toLowerCase().includes('already')) {
-        // Use targeted lookup instead of listing all users
-        const { data: existingProfile } = await adminSupabase
-            .from("profiles")
-            .select("id, role")
-            .eq("email", email)
-            .single();
-
-        if (!existingProfile) {
-            return { error: "User exists but could not be found for update. Please try again." };
-        }
-
-        // Check if the existing user is a Super Admin - protect them
-        if (existingProfile.role === "super_admin") {
-            return { error: "Cannot modify Super Admin accounts. Use a different email." };
-        }
-
-        // Update password
-        const { error: updateError } = await adminSupabase.auth.admin.updateUserById(
-            existingProfile.id,
-            { password }
-        );
-
-        if (updateError) {
-            return { error: `Failed to update password: ${updateError.message}` };
-        }
-
-        // Update profile (upsert)
-        const { error: profileError } = await adminSupabase
-            .from("profiles")
-            .upsert({
-                id: existingProfile.id,
-                email: email,
-                role: role,
-                department: role === 'department_admin' ? department : null
-            }, { onConflict: 'id' });
-
-        if (profileError) {
-            console.error("Profile update error:", profileError);
-            return { error: "Password updated but profile update failed: " + profileError.message };
-        }
-
-        revalidatePath("/admin/super");
-        return { success: true, message: `User ${email} password updated successfully.` };
-    }
-
     if (createError) {
+        if (createError.message.toLowerCase().includes('already')) {
+            return { error: "A user with this email already exists." };
+        }
         return { error: createError.message };
     }
 

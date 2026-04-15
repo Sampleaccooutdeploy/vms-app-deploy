@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { createClient } from "@/utils/supabase/client";
 import styles from "./page.module.css";
 import { CustomDialog } from "@/components/ui/CustomDialog";
-import { DEPARTMENTS, MAX_PHOTO_SIZE_BYTES, ALLOWED_PHOTO_TYPES } from "@/lib/constants";
+import { DEPARTMENTS, DESIGNATIONS, ID_PROOF_TYPES, MAX_PHOTO_SIZE_BYTES, ALLOWED_PHOTO_TYPES } from "@/lib/constants";
 import {
     CheckCircleIcon,
     CloudArrowUpIcon,
@@ -17,13 +17,17 @@ import {
     MapPinIcon,
     CheckBadgeIcon,
     ExclamationTriangleIcon,
+    CameraIcon,
+    IdentificationIcon,
 } from "@heroicons/react/24/outline";
 import CalendarTimePicker from "@/components/ui/CalendarTimePicker";
+import FaceCapture from "@/components/ui/FaceCapture";
 
 // Progress step definitions
 const FORM_STEPS = [
     { id: "personal", label: "Personal", fields: ["name", "designation"] },
     { id: "contact", label: "Contact", fields: ["organization", "email", "phone"] },
+    { id: "identity", label: "ID Proof", fields: ["idProofType", "idProofNumber"] },
     { id: "visit", label: "Visit Details", fields: ["department", "purpose", "expectedDate", "expectedTime"] },
     { id: "photo", label: "Photo", fields: [] }, // Photo tracked separately
 ] as const;
@@ -35,12 +39,15 @@ export default function Register() {
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [previewUrl, setPreviewUrl] = useState("");
     const [draftRestored, setDraftRestored] = useState(false);
+    const [honeypotField, setHoneypotField] = useState(""); // Anti-bot honeypot
     const [submittedData, setSubmittedData] = useState<{
         name: string;
         designation: string;
         organization: string;
         phone: string;
         email: string;
+        idProofType: string;
+        idProofNumber: string;
         purpose: string;
         department: string;
         photoUrl: string;
@@ -66,6 +73,8 @@ export default function Register() {
         countryCode: "+91",
         phone: "",
         email: "",
+        idProofType: "",
+        idProofNumber: "",
         purpose: "",
         department: "",
         expectedDate: "",
@@ -87,6 +96,64 @@ export default function Register() {
     }, [formData, selectedFile]);
 
     const [emailValidFormat, setEmailValidFormat] = useState(false);
+    const [emailTouched, setEmailTouched] = useState(false);
+    const [phoneTouched, setPhoneTouched] = useState(false);
+
+    // Designation autocomplete state
+    const [designationFocused, setDesignationFocused] = useState(false);
+    const [designationHighlight, setDesignationHighlight] = useState(-1);
+    const designationRef = useRef<HTMLDivElement>(null);
+
+    const filteredDesignations = useMemo(() => {
+        const query = formData.designation.trim().toLowerCase();
+        if (!query) return DESIGNATIONS.slice(0, 8); // Show top 8 when empty
+        return DESIGNATIONS.filter((d) =>
+            d.toLowerCase().includes(query)
+        ).slice(0, 8);
+    }, [formData.designation]);
+
+    const handleDesignationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const val = e.target.value;
+        setFormData(prev => ({ ...prev, designation: val }));
+        setDesignationHighlight(-1);
+    };
+
+    const selectDesignation = (value: string) => {
+        setFormData(prev => ({ ...prev, designation: value }));
+        setDesignationFocused(false);
+        setDesignationHighlight(-1);
+    };
+
+    const handleDesignationKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (!designationFocused || filteredDesignations.length === 0) return;
+        if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setDesignationHighlight(prev =>
+                prev < filteredDesignations.length - 1 ? prev + 1 : 0
+            );
+        } else if (e.key === "ArrowUp") {
+            e.preventDefault();
+            setDesignationHighlight(prev =>
+                prev > 0 ? prev - 1 : filteredDesignations.length - 1
+            );
+        } else if (e.key === "Enter" && designationHighlight >= 0) {
+            e.preventDefault();
+            selectDesignation(filteredDesignations[designationHighlight]);
+        } else if (e.key === "Escape") {
+            setDesignationFocused(false);
+        }
+    };
+
+    // Close dropdown on outside click
+    useEffect(() => {
+        const handleClickOutside = (e: MouseEvent) => {
+            if (designationRef.current && !designationRef.current.contains(e.target as Node)) {
+                setDesignationFocused(false);
+            }
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
 
     // Autosave Logic (Session Storage for security)
     useEffect(() => {
@@ -131,18 +198,137 @@ export default function Register() {
         }
     };
 
-    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const val = e.target.value.replace(/\D/g, '');
-        // Allow up to 15 digits for international support
-        if (val.length <= 15) {
-            setFormData(prev => ({ ...prev, phone: val }));
+    // ── Phone formatting helpers ────────────────────────────
+    const formatPhoneDisplay = (raw: string, code: string): string => {
+        if (!raw) return "";
+        // India: 5-5  (98765 43210)
+        if (code === "+91" && raw.length <= 10) {
+            if (raw.length <= 5) return raw;
+            return `${raw.slice(0, 5)} ${raw.slice(5)}`;
         }
+        // US/Canada: 3-3-4  (201 555 0123)
+        if (code === "+1" && raw.length <= 10) {
+            if (raw.length <= 3) return raw;
+            if (raw.length <= 6) return `${raw.slice(0, 3)} ${raw.slice(3)}`;
+            return `${raw.slice(0, 3)} ${raw.slice(3, 6)} ${raw.slice(6)}`;
+        }
+        // UK: 4-3-4 or 4-7
+        if (code === "+44" && raw.length <= 11) {
+            if (raw.length <= 4) return raw;
+            if (raw.length <= 7) return `${raw.slice(0, 4)} ${raw.slice(4)}`;
+            return `${raw.slice(0, 4)} ${raw.slice(4, 7)} ${raw.slice(7)}`;
+        }
+        // Default: groups of 4
+        return raw.replace(/(\d{4})(?=\d)/g, "$1 ");
+    };
+
+    const getPhoneMaxDigits = (code: string): number => {
+        if (code === "+91") return 10;
+        if (code === "+1") return 10;
+        if (code === "+44") return 11;
+        return 15;
+    };
+
+    const isPhoneComplete = (raw: string, code: string): boolean => {
+        if (code === "+91") return raw.length === 10;
+        if (code === "+1") return raw.length === 10;
+        if (code === "+44") return raw.length >= 10 && raw.length <= 11;
+        return raw.length >= 7;
+    };
+
+    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        // Strip everything except digits from the input
+        const raw = e.target.value.replace(/\D/g, "");
+        const max = getPhoneMaxDigits(formData.countryCode);
+        if (raw.length <= max) {
+            setFormData(prev => ({ ...prev, phone: raw }));
+        }
+        if (!phoneTouched) setPhoneTouched(true);
+    };
+
+    // ── Email validation helpers ────────────────────────────
+    const KNOWN_DOMAINS = [
+        "gmail.com", "yahoo.com", "yahoo.in", "outlook.com", "hotmail.com",
+        "live.com", "icloud.com", "protonmail.com", "rediffmail.com",
+        "zoho.com", "aol.com", "mail.com", "yandex.com",
+    ];
+
+    const getEmailStatus = (email: string): { valid: boolean; hint: string } => {
+        if (!email) return { valid: false, hint: "" };
+        const basic = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+        if (!basic) {
+            if (!email.includes("@")) return { valid: false, hint: 'Missing "@" symbol' };
+            const [, domain] = email.split("@");
+            if (!domain || !domain.includes(".")) return { valid: false, hint: "Incomplete domain (e.g. gmail.com)" };
+            return { valid: false, hint: "Invalid email format" };
+        }
+        // Extra checks
+        const [localPart, domain] = email.split("@");
+        if (localPart.length < 1) return { valid: false, hint: "Username is empty" };
+        if (domain.length < 4) return { valid: false, hint: "Domain too short" };
+        // Suggest known domain if close
+        const lowerDomain = domain.toLowerCase();
+        if (!lowerDomain.includes(".") || lowerDomain.endsWith(".")) {
+            return { valid: false, hint: "Incomplete domain" };
+        }
+        return { valid: true, hint: "" };
     };
 
     const handleEmailChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const email = e.target.value;
         setFormData(prev => ({ ...prev, email }));
-        setEmailValidFormat(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email));
+        const { valid } = getEmailStatus(email);
+        setEmailValidFormat(valid);
+        if (!emailTouched) setEmailTouched(true);
+    };
+
+    // ── ID Proof validation helpers ────────────────────────────
+    const [idProofTouched, setIdProofTouched] = useState(false);
+
+    const selectedIdProof = useMemo(() => {
+        return ID_PROOF_TYPES.find(t => t.value === formData.idProofType) ?? null;
+    }, [formData.idProofType]);
+
+    const formatAadhar = (raw: string): string => {
+        const digits = raw.replace(/\D/g, "").slice(0, 12);
+        if (digits.length <= 4) return digits;
+        if (digits.length <= 8) return `${digits.slice(0, 4)} ${digits.slice(4)}`;
+        return `${digits.slice(0, 4)} ${digits.slice(4, 8)} ${digits.slice(8)}`;
+    };
+
+    const isIdProofValid = useMemo((): boolean => {
+        if (!formData.idProofType || !formData.idProofNumber) return false;
+        if (!selectedIdProof) return false;
+        const value = formData.idProofType === "aadhar"
+            ? formData.idProofNumber.replace(/\s/g, "")
+            : formData.idProofNumber.trim();
+        return selectedIdProof.pattern.test(value);
+    }, [formData.idProofType, formData.idProofNumber, selectedIdProof]);
+
+    const handleIdProofNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        let value = e.target.value;
+
+        if (formData.idProofType === "aadhar") {
+            // Only allow digits, auto-format with spaces
+            value = formatAadhar(value);
+        } else if (formData.idProofType === "pan") {
+            // Uppercase, max 10 chars
+            value = value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10);
+        } else if (formData.idProofType === "passport") {
+            value = value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 8);
+        } else if (formData.idProofType === "voter_id") {
+            value = value.toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 10);
+        } else if (formData.idProofType === "driving_license") {
+            value = value.toUpperCase().replace(/[^A-Z0-9\s]/g, "").slice(0, 16);
+        }
+
+        setFormData(prev => ({ ...prev, idProofNumber: value }));
+        if (!idProofTouched) setIdProofTouched(true);
+    };
+
+    const handleIdProofTypeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setFormData(prev => ({ ...prev, idProofType: e.target.value, idProofNumber: "" }));
+        setIdProofTouched(false);
     };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -152,6 +338,13 @@ export default function Register() {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+
+        // Honeypot anti-bot check — silently reject if filled
+        if (honeypotField) {
+            setSuccess(true);
+            return;
+        }
+
         setLoading(true);
 
         // Validation
@@ -163,6 +356,24 @@ export default function Register() {
         }
         if (formData.phone.length < 7) {
             showDialog("Invalid Phone Number", "Please enter a valid phone number.");
+            setLoading(false);
+            return;
+        }
+
+        // ID proof validation
+        if (!formData.idProofType) {
+            showDialog("ID Proof Required", "Please select a type of identity proof.");
+            setLoading(false);
+            return;
+        }
+        if (!formData.idProofNumber) {
+            showDialog("ID Number Required", "Please enter your identity proof number.");
+            setLoading(false);
+            return;
+        }
+        if (!isIdProofValid) {
+            const proofLabel = selectedIdProof?.label ?? "ID";
+            showDialog("Invalid ID Number", `Please enter a valid ${proofLabel} number.`);
             setLoading(false);
             return;
         }
@@ -206,12 +417,18 @@ export default function Register() {
             .getPublicUrl(fileNamePath);
 
         // 2. Insert Data
+        const idNumberClean = formData.idProofType === "aadhar"
+            ? formData.idProofNumber.replace(/\s/g, "")
+            : formData.idProofNumber.trim();
+
         const { error } = await supabase.from("visitor_requests").insert({
             name: formData.name,
             designation: formData.designation,
             organization: formData.organization,
             phone: `${formData.countryCode} ${formData.phone}`,
             email: formData.email,
+            id_proof_type: formData.idProofType,
+            id_proof_number: idNumberClean,
             purpose: formData.purpose,
             department: formData.department,
             photo_url: publicUrl,
@@ -230,6 +447,10 @@ export default function Register() {
                 organization: formData.organization,
                 phone: `${formData.countryCode} ${formData.phone}`,
                 email: formData.email,
+                idProofType: selectedIdProof?.label ?? formData.idProofType,
+                idProofNumber: formData.idProofType === "aadhar"
+                    ? formatAadhar(formData.idProofNumber.replace(/\s/g, ""))
+                    : formData.idProofNumber,
                 purpose: formData.purpose,
                 department: formData.department,
                 photoUrl: publicUrl,
@@ -294,6 +515,22 @@ export default function Register() {
                             <div className={styles.detailRow}>
                                 <span className={styles.detailLabel}>Phone</span>
                                 <span className={styles.detailValue}>{submittedData.phone}</span>
+                            </div>
+                            <div className={styles.detailRow}>
+                                <span className={styles.detailLabel}>ID Proof</span>
+                                <span className={styles.detailValue}>
+                                    {submittedData.idProofType}:{" "}
+                                    {(() => {
+                                        const num = submittedData.idProofNumber.replace(/\s/g, "");
+                                        if (submittedData.idProofType === "Aadhar Card" && num.length === 12) {
+                                            return `XXXX XXXX ${num.slice(8)}`;
+                                        }
+                                        if (num.length > 4) {
+                                            return "X".repeat(num.length - 4) + num.slice(-4);
+                                        }
+                                        return num;
+                                    })()}
+                                </span>
                             </div>
                             <div className={styles.detailRow}>
                                 <span className={styles.detailLabel}>Department</span>
@@ -368,7 +605,7 @@ export default function Register() {
             <div className={styles.card}>
                 <div className={styles.cardHeader}> {/* Restored standard header markup */}
                     <h1 className={styles.title}>Visitor Registration</h1>
-                    <p className={styles.subtitle}>Welcome to SCSVMV. Please fill in your details.</p>
+                    <p className={styles.subtitle}>Please fill in your details to register your visit.</p>
                 </div>
 
                 {/* Form Progress Indicator */}
@@ -399,6 +636,19 @@ export default function Register() {
                 </div>
 
                 <form onSubmit={handleSubmit} className={styles.form}>
+                    {/* Honeypot anti-bot field — hidden from real users */}
+                    <div aria-hidden="true" style={{ position: 'absolute', left: '-9999px', top: '-9999px', opacity: 0, height: 0, overflow: 'hidden' }}>
+                        <label htmlFor="website">Website (do not fill)</label>
+                        <input
+                            type="text"
+                            id="website"
+                            name="website"
+                            autoComplete="off"
+                            tabIndex={-1}
+                            value={honeypotField}
+                            onChange={(e) => setHoneypotField(e.target.value)}
+                        />
+                    </div>
 
                     <div className={styles.grid}>
 
@@ -414,25 +664,83 @@ export default function Register() {
                                 className={styles.input}
                                 value={formData.name}
                                 onChange={handleNameChange}
-                                placeholder="Enter your name"
+                                placeholder="Full name as per ID"
                             />
                             <span className={styles.hint}>{formData.name.length}/30 characters</span>
                         </div>
 
                         {/* Designation */}
-                        <div className="form-group">
+                        <div className="form-group" ref={designationRef}>
                             <label className={styles.label}>
                                 <BriefcaseIcon className={styles.labelIcon} /> Designation
                             </label>
-                            <input
-                                name="designation"
-                                type="text"
-                                required
-                                className={styles.input}
-                                value={formData.designation}
-                                onChange={handleChange}
-                                placeholder="e.g. Senior Professor"
-                            />
+                            <div className={styles.autocompleteWrapper}>
+                                <input
+                                    name="designation"
+                                    type="text"
+                                    required
+                                    autoComplete="off"
+                                    className={styles.input}
+                                    value={formData.designation}
+                                    onChange={handleDesignationChange}
+                                    onFocus={() => setDesignationFocused(true)}
+                                    onKeyDown={handleDesignationKeyDown}
+                                    placeholder="Type your designation"
+                                    role="combobox"
+                                    aria-expanded={designationFocused && filteredDesignations.length > 0}
+                                    aria-autocomplete="list"
+                                    aria-controls="designation-listbox"
+                                    aria-activedescendant={
+                                        designationHighlight >= 0
+                                            ? `designation-opt-${designationHighlight}`
+                                            : undefined
+                                    }
+                                />
+                                {designationFocused && filteredDesignations.length > 0 && (
+                                    <ul
+                                        id="designation-listbox"
+                                        role="listbox"
+                                        className={styles.autocompleteDropdown}
+                                    >
+                                        {filteredDesignations.map((d, idx) => {
+                                            // Highlight matching text
+                                            const query = formData.designation.trim().toLowerCase();
+                                            let label: React.ReactNode = d;
+                                            if (query) {
+                                                const matchIdx = d.toLowerCase().indexOf(query);
+                                                if (matchIdx >= 0) {
+                                                    label = (
+                                                        <>
+                                                            {d.slice(0, matchIdx)}
+                                                            <strong className={styles.autocompleteMatch}>
+                                                                {d.slice(matchIdx, matchIdx + query.length)}
+                                                            </strong>
+                                                            {d.slice(matchIdx + query.length)}
+                                                        </>
+                                                    );
+                                                }
+                                            }
+                                            return (
+                                                <li
+                                                    key={d}
+                                                    id={`designation-opt-${idx}`}
+                                                    role="option"
+                                                    aria-selected={idx === designationHighlight}
+                                                    className={`${styles.autocompleteItem} ${idx === designationHighlight ? styles.autocompleteItemActive : ""
+                                                        }`}
+                                                    onMouseDown={(e) => {
+                                                        e.preventDefault(); // Prevent blur before click
+                                                        selectDesignation(d);
+                                                    }}
+                                                    onMouseEnter={() => setDesignationHighlight(idx)}
+                                                >
+                                                    {label}
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                )}
+                            </div>
                         </div>
 
                         {/* Organization */}
@@ -447,7 +755,7 @@ export default function Register() {
                                 className={styles.input}
                                 value={formData.organization}
                                 onChange={handleChange}
-                                placeholder="Where are you visiting from?"
+                                placeholder="Organization or institution name"
                             />
                         </div>
 
@@ -455,30 +763,57 @@ export default function Register() {
                         <div className="form-group">
                             <label className={styles.label}>
                                 <EnvelopeIcon className={styles.labelIcon} /> Email Address
-                                {emailValidFormat && <span className={styles.verifiedBadge}><CheckBadgeIcon className={styles.verifiedIcon} /> Valid Format</span>}
+                                {emailValidFormat && (
+                                    <span className={styles.verifiedBadge}>
+                                        <CheckBadgeIcon className={styles.verifiedIcon} /> Valid
+                                    </span>
+                                )}
                             </label>
-                            <input
-                                name="email"
-                                type="email"
-                                required
-                                className={`${styles.input} ${emailValidFormat ? styles.inputVerified : ''}`}
-                                value={formData.email}
-                                onChange={handleEmailChange}
-                                placeholder="Enter your email"
-                            />
+                            <div className={styles.inputWrapper}>
+                                <input
+                                    name="email"
+                                    type="email"
+                                    required
+                                    autoComplete="email"
+                                    className={`${styles.input} ${emailValidFormat
+                                        ? styles.inputVerified
+                                        : emailTouched && formData.email && !emailValidFormat
+                                            ? styles.inputError
+                                            : ""
+                                        }`}
+                                    value={formData.email}
+                                    onChange={handleEmailChange}
+                                    onBlur={() => setEmailTouched(true)}
+                                    placeholder="Enter your email address"
+                                />
+                            </div>
+                            {emailTouched && formData.email && !emailValidFormat && (
+                                <span className={styles.errorHint}>
+                                    {getEmailStatus(formData.email).hint}
+                                </span>
+                            )}
                         </div>
 
                         {/* Phone */}
                         <div className="form-group">
                             <label className={styles.label}>
                                 <PhoneIcon className={styles.labelIcon} /> Phone Number
+                                {phoneTouched && formData.phone && isPhoneComplete(formData.phone, formData.countryCode) && (
+                                    <span className={styles.verifiedBadge}>
+                                        <CheckBadgeIcon className={styles.verifiedIcon} /> Valid
+                                    </span>
+                                )}
                             </label>
                             <div className={styles.phoneGroup}>
                                 <select
                                     name="countryCode"
                                     className={styles.countrySelect}
                                     value={formData.countryCode}
-                                    onChange={handleChange}
+                                    onChange={(e) => {
+                                        handleChange(e);
+                                        // Clear phone when country changes to avoid mismatched lengths
+                                        setFormData(prev => ({ ...prev, phone: "", countryCode: e.target.value }));
+                                    }}
                                 >
                                     <option value="+91">🇮🇳 +91</option>
                                     <option value="+1">🇺🇸 +1</option>
@@ -500,13 +835,94 @@ export default function Register() {
                                     name="phone"
                                     type="tel"
                                     required
-                                    className={styles.input}
-                                    value={formData.phone}
+                                    autoComplete="tel"
+                                    inputMode="numeric"
+                                    className={`${styles.input} ${phoneTouched && formData.phone && isPhoneComplete(formData.phone, formData.countryCode)
+                                        ? styles.inputVerified
+                                        : ""
+                                        }`}
+                                    value={formatPhoneDisplay(formData.phone, formData.countryCode)}
                                     onChange={handlePhoneChange}
-                                    placeholder="Enter mobile number"
+                                    onBlur={() => setPhoneTouched(true)}
+                                    placeholder={formData.countryCode === "+91" ? "Enter 10-digit mobile number" : "Enter your phone number"}
                                 />
                             </div>
+                            {phoneTouched && formData.phone && !isPhoneComplete(formData.phone, formData.countryCode) && (
+                                <span className={styles.errorHint}>
+                                    {formData.countryCode === "+91"
+                                        ? `${formData.phone.length}/10 digits entered`
+                                        : `${formData.phone.length} digits entered — minimum 7 required`}
+                                </span>
+                            )}
+                            {!formData.phone && (
+                                <span className={styles.hint}>
+                                    {formData.countryCode === "+91" ? "10-digit Indian mobile number" : "Include area code if applicable"}
+                                </span>
+                            )}
                         </div>
+
+                        {/* Proof of Identity */}
+                        <div className="form-group">
+                            <label className={styles.label}>
+                                <IdentificationIcon className={styles.labelIcon} /> ID Proof Type
+                            </label>
+                            <select
+                                name="idProofType"
+                                required
+                                className={styles.select}
+                                value={formData.idProofType}
+                                onChange={handleIdProofTypeChange}
+                            >
+                                <option value="">Select identity proof</option>
+                                {ID_PROOF_TYPES.map(t => (
+                                    <option key={t.value} value={t.value}>{t.label}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        {formData.idProofType && (
+                            <div className="form-group">
+                                <label className={styles.label}>
+                                    <IdentificationIcon className={styles.labelIcon} /> {selectedIdProof?.label ?? "ID"} Number
+                                    {isIdProofValid && (
+                                        <span className={styles.verifiedBadge}>
+                                            <CheckBadgeIcon className={styles.verifiedIcon} /> Valid
+                                        </span>
+                                    )}
+                                </label>
+                                <div className={styles.inputWrapper}>
+                                    <input
+                                        name="idProofNumber"
+                                        type="text"
+                                        required
+                                        autoComplete="off"
+                                        inputMode={formData.idProofType === "aadhar" ? "numeric" : "text"}
+                                        className={`${styles.input} ${isIdProofValid
+                                            ? styles.inputVerified
+                                            : idProofTouched && formData.idProofNumber && !isIdProofValid
+                                                ? styles.inputError
+                                                : ""
+                                            }`}
+                                        value={formData.idProofNumber}
+                                        onChange={handleIdProofNumberChange}
+                                        onBlur={() => setIdProofTouched(true)}
+                                        placeholder={selectedIdProof?.placeholder ?? "Enter ID number"}
+                                        maxLength={selectedIdProof?.maxLength ?? 30}
+                                    />
+                                </div>
+                                {selectedIdProof && (
+                                    <span className={
+                                        idProofTouched && formData.idProofNumber && !isIdProofValid
+                                            ? styles.errorHint
+                                            : styles.hint
+                                    }>
+                                        {idProofTouched && formData.idProofNumber && !isIdProofValid
+                                            ? `Invalid format — ${selectedIdProof.hint}`
+                                            : selectedIdProof.hint}
+                                    </span>
+                                )}
+                            </div>
+                        )}
 
                         {/* Department */}
                         <div className="form-group">
@@ -520,7 +936,7 @@ export default function Register() {
                                 value={formData.department}
                                 onChange={handleChange}
                             >
-                                <option value="">Select Department</option>
+                                <option value="">Choose department</option>
                                 {DEPARTMENTS.map(d => <option key={d} value={d}>{d}</option>)}
                             </select>
                         </div>
@@ -549,68 +965,25 @@ export default function Register() {
                                 rows={3}
                                 value={formData.purpose}
                                 onChange={handleChange}
-                                placeholder="Briefly describe the purpose of your visit"
+                                placeholder="Describe the reason for your visit"
                             ></textarea>
                         </div>
 
 
-                        {/* Photo Upload */}
+                        {/* Photo — Live Face Capture or Upload */}
                         <div className={`form-group ${styles.fullWidth}`}>
                             <label className={styles.label}>
-                                <CloudArrowUpIcon className={styles.labelIcon} /> Visitor Photo
+                                <CameraIcon className={styles.labelIcon} /> Visitor Photo
                             </label>
 
-                            <div className={styles.photoUploadContainer}>
-                                {previewUrl ? (
-                                    <div className={styles.previewWrapper}>
-                                        <img
-                                            src={previewUrl}
-                                            alt="Visitor Preview"
-                                            className={styles.previewImage}
-                                        />
-                                        <button
-                                            type="button"
-                                            className={styles.removePreviewBtn}
-                                            onClick={() => {
-                                                setPreviewUrl("");
-                                                setSelectedFile(null);
-                                                // Reset file input value if needed via ref
-                                                const fileInput = document.getElementById('photo-upload') as HTMLInputElement;
-                                                if (fileInput) fileInput.value = "";
-                                            }}
-                                        >
-                                            Change Photo
-                                        </button>
-                                    </div>
-                                ) : (
-                                    <div className={styles.fileUpload}>
-                                        <input
-                                            type="file"
-                                            name="photo"
-                                            accept="image/png, image/jpeg, image/webp"
-                                            required
-                                            id="photo-upload"
-                                            className={styles.fileInput}
-                                            onChange={(e) => {
-                                                const file = e.target.files?.[0];
-                                                if (file) {
-                                                    setSelectedFile(file); // Set selected file
-                                                    const url = URL.createObjectURL(file);
-                                                    setPreviewUrl(url);
-                                                } else {
-                                                    setPreviewUrl("");
-                                                    setSelectedFile(null);
-                                                }
-                                            }}
-                                        />
-                                        <label htmlFor="photo-upload" className={styles.fileLabel}>
-                                            <CloudArrowUpIcon className={styles.uploadIcon} />
-                                            <span>Click to upload photo</span>
-                                        </label>
-                                    </div>
-                                )}
-                            </div>
-                            <p className={styles.hint}>JPG, PNG or WebP. Max 5MB. Will be used as your profile picture.</p>
+                            <FaceCapture
+                                selectedFile={selectedFile}
+                                previewUrl={previewUrl}
+                                onFileSelect={(file) => setSelectedFile(file)}
+                                onPreviewChange={(url) => setPreviewUrl(url)}
+                                required
+                            />
+                            <p className={styles.hint}>Take a live photo or upload one. Max 5 MB.</p>
                         </div>
 
                     </div>

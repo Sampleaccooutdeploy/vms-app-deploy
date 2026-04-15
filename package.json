@@ -3,10 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --experimental-https --experimental-https-key ./certificates/localhost-key.pem --experimental-https-cert ./certificates/localhost.pem",
+    "dev:http": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "generate-cert": "node generate-cert.mjs"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
@@ -20,7 +22,6 @@
     "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.7",
     "next": "16.1.6",
-    "next-pwa": "^5.6.0",
     "nodemailer": "8.0.0",
     "react": "19.2.3",
     "react-dom": "19.2.3",

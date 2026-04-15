@@ -73,6 +73,8 @@ export type Database = {
           expected_date: string | null
           expected_time: string | null
           id: string
+          id_proof_type: string | null
+          id_proof_number: string | null
           name: string
           organization: string | null
           phone: string | null
@@ -91,6 +93,8 @@ export type Database = {
           expected_date?: string | null
           expected_time?: string | null
           id?: string
+          id_proof_type?: string | null
+          id_proof_number?: string | null
           name: string
           organization?: string | null
           phone?: string | null
@@ -109,6 +113,8 @@ export type Database = {
           expected_date?: string | null
           expected_time?: string | null
           id?: string
+          id_proof_type?: string | null
+          id_proof_number?: string | null
           name?: string
           organization?: string | null
           phone?: string | null

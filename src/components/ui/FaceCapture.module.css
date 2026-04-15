@@ -1,0 +1,737 @@
+/* ============================================
+   FaceCapture Component Styles
+   Supports both Upload & Live Camera modes
+   Responsive: Mobile + Desktop
+   ============================================ */
+
+.container {
+    width: 100%;
+}
+
+/* ── Mode Toggle ─────────────────────────── */
+
+.modeToggle {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    margin-bottom: 1rem;
+    background: var(--background-color);
+}
+
+.modeBtn {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.65rem 1rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+}
+
+.modeBtn:hover {
+    background: rgba(255, 153, 51, 0.06);
+    color: var(--text-primary);
+}
+
+.modeBtnActive {
+    background: var(--secondary-color) !important;
+    color: #fff !important;
+    font-weight: 600;
+}
+
+.modeBtnIcon {
+    width: 18px;
+    height: 18px;
+}
+
+/* ── Upload Zone ─────────────────────────── */
+
+.uploadZone {
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius-md);
+    transition: border-color 0.2s, background 0.2s;
+    background: var(--background-color);
+}
+
+.uploadZone:hover {
+    border-color: var(--secondary-color);
+    background: rgba(255, 153, 51, 0.03);
+}
+
+.fileInput {
+    display: none;
+}
+
+.uploadLabel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 2rem 1.5rem;
+    cursor: pointer;
+    text-align: center;
+}
+
+.uploadIconWrapper {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(255, 153, 51, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.uploadMainIcon {
+    width: 28px;
+    height: 28px;
+    color: var(--secondary-color);
+}
+
+.uploadText {
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.uploadHint {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+/* ── Camera Zone ─────────────────────────── */
+
+.cameraZone {
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: #000;
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Camera prompt (before start) */
+.cameraPrompt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 2rem;
+    text-align: center;
+}
+
+.cameraPromptIcon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(255, 153, 51, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.promptIcon {
+    width: 32px;
+    height: 32px;
+    color: var(--secondary-color);
+}
+
+.promptText {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    margin: 0;
+    max-width: 260px;
+}
+
+.startCameraBtn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.7rem 1.5rem;
+    background: var(--secondary-color);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.startCameraBtn:hover {
+    background: #e68a00;
+}
+
+/* Camera error */
+.cameraError {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 2rem;
+    text-align: center;
+}
+
+.cameraError p {
+    color: #fca5a5;
+    font-size: 0.9rem;
+    margin: 0;
+    max-width: 300px;
+}
+
+.errorIcon {
+    width: 32px;
+    height: 32px;
+    color: #ef4444;
+}
+
+.retryBtn {
+    padding: 0.5rem 1.25rem;
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: var(--radius-md);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.retryBtn:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* Camera viewport (active) */
+.cameraViewport {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.videoContainer {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    overflow: hidden;
+    background: #000;
+}
+
+.video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.videoMirrored {
+    transform: scaleX(-1);
+}
+
+/* ── Face Guide Overlay ──────────────────── */
+
+.faceGuideOverlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    z-index: 2;
+}
+
+.faceOval {
+    width: 55%;
+    aspect-ratio: 3 / 4;
+    max-width: 200px;
+    max-height: 260px;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    position: relative;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
+    animation: ovalPulse 2.5s ease-in-out infinite;
+}
+
+@keyframes ovalPulse {
+    0%, 100% {
+        border-color: rgba(255, 255, 255, 0.5);
+    }
+    50% {
+        border-color: rgba(255, 153, 51, 0.8);
+    }
+}
+
+/* Corner brackets for the face oval */
+.faceOvalCornerTL,
+.faceOvalCornerTR,
+.faceOvalCornerBL,
+.faceOvalCornerBR {
+    position: absolute;
+    width: 20px;
+    height: 20px;
+    border-color: var(--secondary-color);
+    border-style: solid;
+    border-width: 0;
+}
+
+.faceOvalCornerTL {
+    top: -4px;
+    left: 15%;
+    border-top-width: 3px;
+    border-left-width: 3px;
+    border-top-left-radius: 12px;
+}
+
+.faceOvalCornerTR {
+    top: -4px;
+    right: 15%;
+    border-top-width: 3px;
+    border-right-width: 3px;
+    border-top-right-radius: 12px;
+}
+
+.faceOvalCornerBL {
+    bottom: -4px;
+    left: 15%;
+    border-bottom-width: 3px;
+    border-left-width: 3px;
+    border-bottom-left-radius: 12px;
+}
+
+.faceOvalCornerBR {
+    bottom: -4px;
+    right: 15%;
+    border-bottom-width: 3px;
+    border-right-width: 3px;
+    border-bottom-right-radius: 12px;
+}
+
+.guidanceText {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: 0.78rem;
+    margin-top: 1rem;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 0.3rem 0.75rem;
+    border-radius: 20px;
+    backdrop-filter: blur(4px);
+}
+
+/* ── Countdown Overlay ───────────────────── */
+
+.countdownOverlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: 5;
+}
+
+.countdownNumber {
+    font-size: 5rem;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    animation: countdownPop 0.6s ease-out;
+}
+
+@keyframes countdownPop {
+    0% {
+        transform: scale(2);
+        opacity: 0.3;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* ── Camera Loading ──────────────────────── */
+
+.cameraLoading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    background: rgba(0, 0, 0, 0.7);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+    z-index: 3;
+}
+
+.spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid rgba(255, 255, 255, 0.2);
+    border-top-color: var(--secondary-color);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ── Camera Controls ─────────────────────── */
+
+.cameraControls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.85);
+}
+
+.controlBtn {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    background: rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.controlBtn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.controlIcon {
+    width: 22px;
+    height: 22px;
+    color: #fff;
+}
+
+/* Shutter / Capture button */
+.captureBtn {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 4px solid #fff;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.15s;
+    padding: 0;
+}
+
+.captureBtn:hover {
+    transform: scale(1.08);
+}
+
+.captureBtn:active {
+    transform: scale(0.95);
+}
+
+.captureBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.captureBtnInner {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: #fff;
+    transition: background 0.15s;
+}
+
+.captureBtn:hover .captureBtnInner {
+    background: #e0e0e0;
+}
+
+/* ── Preview (after capture/upload) ──────── */
+
+.previewContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.5rem;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--background-color);
+}
+
+.previewImageWrapper {
+    position: relative;
+    display: inline-block;
+}
+
+.previewImage {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 4px solid var(--secondary-color);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.previewBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 0.5rem;
+    padding: 3px 10px;
+    background: rgba(255, 153, 51, 0.1);
+    color: var(--secondary-color);
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.badgeIcon {
+    width: 14px;
+    height: 14px;
+}
+
+.previewActions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.retakeBtn {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.5rem 1rem;
+    background: none;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-primary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.retakeBtn:hover {
+    border-color: var(--secondary-color);
+    color: var(--secondary-color);
+}
+
+.actionIcon {
+    width: 16px;
+    height: 16px;
+}
+
+/* ── Hidden Canvas ───────────────────────── */
+
+.hiddenCanvas {
+    display: none;
+}
+
+/* ════════════════════════════════════════════
+   RESPONSIVE — Tablet
+   ════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+    .modeBtn {
+        padding: 0.55rem 0.75rem;
+        font-size: 0.85rem;
+    }
+
+    .modeBtnIcon {
+        width: 16px;
+        height: 16px;
+    }
+
+    .uploadLabel {
+        padding: 1.5rem 1rem;
+    }
+
+    .uploadIconWrapper {
+        width: 48px;
+        height: 48px;
+    }
+
+    .uploadMainIcon {
+        width: 24px;
+        height: 24px;
+    }
+
+    .videoContainer {
+        aspect-ratio: 3 / 4;
+    }
+
+    .faceOval {
+        width: 60%;
+        max-width: 180px;
+        max-height: 240px;
+    }
+
+    .cameraControls {
+        padding: 0.75rem;
+    }
+
+    .captureBtn {
+        width: 56px;
+        height: 56px;
+    }
+
+    .captureBtnInner {
+        width: 42px;
+        height: 42px;
+    }
+}
+
+/* ════════════════════════════════════════════
+   RESPONSIVE — Small phones
+   ════════════════════════════════════════════ */
+
+@media (max-width: 480px) {
+    .modeBtn {
+        padding: 0.5rem 0.5rem;
+        font-size: 0.8rem;
+        gap: 0.35rem;
+    }
+
+    .uploadLabel {
+        padding: 1.25rem 0.75rem;
+        gap: 0.5rem;
+    }
+
+    .uploadText {
+        font-size: 0.88rem;
+    }
+
+    .uploadHint {
+        font-size: 0.75rem;
+    }
+
+    .cameraZone {
+        min-height: 240px;
+    }
+
+    .cameraPrompt {
+        padding: 1.5rem;
+    }
+
+    .promptText {
+        font-size: 0.85rem;
+    }
+
+    .startCameraBtn {
+        font-size: 0.88rem;
+        padding: 0.6rem 1.25rem;
+    }
+
+    .faceOval {
+        width: 65%;
+    }
+
+    .guidanceText {
+        font-size: 0.7rem;
+    }
+
+    .countdownNumber {
+        font-size: 4rem;
+    }
+
+    .previewImage {
+        width: 100px;
+        height: 100px;
+    }
+
+    .previewContainer {
+        padding: 1rem;
+    }
+}
+
+/* ════════════════════════════════════════════
+   DARK MODE
+   ════════════════════════════════════════════ */
+
+:global(:root.dark) .modeToggle {
+    border-color: var(--border-color);
+    background: var(--surface-color);
+}
+
+:global(:root.dark) .modeBtn {
+    color: var(--text-secondary);
+}
+
+:global(:root.dark) .modeBtn:hover {
+    background: rgba(255, 153, 51, 0.1);
+    color: var(--text-primary);
+}
+
+:global(:root.dark) .modeBtnActive {
+    background: var(--secondary-color) !important;
+    color: #1A202C !important;
+}
+
+:global(:root.dark) .uploadZone {
+    border-color: var(--border-color);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+:global(:root.dark) .uploadZone:hover {
+    border-color: var(--secondary-color);
+    background: rgba(255, 153, 51, 0.05);
+}
+
+:global(:root.dark) .uploadText {
+    color: var(--text-primary);
+}
+
+:global(:root.dark) .uploadHint {
+    color: var(--text-muted);
+}
+
+:global(:root.dark) .uploadIconWrapper {
+    background: rgba(255, 153, 51, 0.15);
+}
+
+:global(:root.dark) .cameraZone {
+    border-color: var(--border-color);
+}
+
+:global(:root.dark) .previewContainer {
+    border-color: var(--border-color);
+    background: var(--surface-color);
+}
+
+:global(:root.dark) .retakeBtn {
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+:global(:root.dark) .retakeBtn:hover {
+    border-color: var(--secondary-color);
+    color: var(--secondary-color);
+}
+
+:global(:root.dark) .previewBadge {
+    background: rgba(255, 153, 51, 0.15);
+}
+
+:global(:root.dark) .startCameraBtn {
+    color: #1A202C;
+}

@@ -49,18 +49,20 @@ interface DeptAnalytics {
 interface DepartmentClientProps {
     pendingRequests: VisitorRequest[];
     approvedVisitors: VisitorRequest[];
+    inOutVisitors: VisitorRequest[];
     department: string;
 }
 
-export default function DepartmentClient({ pendingRequests, approvedVisitors, department }: DepartmentClientProps) {
+export default function DepartmentClient({ pendingRequests, approvedVisitors, inOutVisitors, department }: DepartmentClientProps) {
     const [searchTerm, setSearchTerm] = useState("");
     const [selectedVisitor, setSelectedVisitor] = useState<VisitorRequest | null>(null);
-    const [activeTab, setActiveTab] = useState<"pending" | "approved">("pending");
+    const [activeTab, setActiveTab] = useState<"pending" | "approved" | "inout">("pending");
     const [analytics, setAnalytics] = useState<DeptAnalytics | null>(null);
 
     // Live data with realtime updates
     const [livePending, setLivePending] = useState<VisitorRequest[]>(pendingRequests);
     const [liveApproved, setLiveApproved] = useState<VisitorRequest[]>(approvedVisitors);
+    const [liveInOut, setLiveInOut] = useState<VisitorRequest[]>(inOutVisitors);
 
     const { showToast } = useToast();
 
@@ -120,12 +122,24 @@ export default function DepartmentClient({ pendingRequests, approvedVisitors, de
                         });
                     } else if (updated.status === "rejected") {
                         setLivePending((prev) => prev.filter((v) => v.id !== updated.id));
+                    } else if (updated.status === "checked_in" || updated.status === "checked_out") {
+                        // Move from approved to In/Out
+                        setLiveApproved((prev) => prev.filter((v) => v.id !== updated.id));
+                        setLiveInOut((prev) => {
+                            if (prev.some((v) => v.id === updated.id)) {
+                                return prev.map((v) => (v.id === updated.id ? updated : v));
+                            }
+                            return [updated, ...prev];
+                        });
                     } else {
-                        // Update in both lists
+                        // Update in all lists
                         setLivePending((prev) =>
                             prev.map((v) => (v.id === updated.id ? updated : v))
                         );
                         setLiveApproved((prev) =>
+                            prev.map((v) => (v.id === updated.id ? updated : v))
+                        );
+                        setLiveInOut((prev) =>
                             prev.map((v) => (v.id === updated.id ? updated : v))
                         );
                     }
@@ -151,13 +165,17 @@ export default function DepartmentClient({ pendingRequests, approvedVisitors, de
 
     // Filter logic based on active tab - Memoized for performance
     const filteredRequests = useMemo(() => {
-        const currentList = activeTab === "pending" ? livePending : liveApproved;
+        const currentList = activeTab === "pending" ? livePending : activeTab === "approved" ? liveApproved : liveInOut;
         return currentList.filter(req =>
             (req.name && req.name.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (req.organization && req.organization.toLowerCase().includes(searchTerm.toLowerCase())) ||
             (req.phone && req.phone.includes(searchTerm))
         );
-    }, [activeTab, livePending, liveApproved, searchTerm]);
+    }, [activeTab, livePending, liveApproved, liveInOut, searchTerm]);
+
+    // In/Out summary counts
+    const activeCount = liveInOut.filter(v => v.status === "checked_in").length;
+    const completedCount = liveInOut.filter(v => v.status === "checked_out").length;
 
     // Custom Approve Handler to show loading per visitor
     const handleApprove = async (formData: FormData) => {
@@ -284,140 +302,207 @@ export default function DepartmentClient({ pendingRequests, approvedVisitors, de
 
             {/* ── Visitor Requests ── */}
             <Card variant="outline">
-            <CardContent>
-            <div className={styles.tabs}>
-                <button
-                    className={`${styles.tab} ${activeTab === "pending" ? styles.tabActive : ""}`}
-                    onClick={() => setActiveTab("pending")}
-                >
-                    Pending Requests ({livePending.length})
-                </button>
-                <button
-                    className={`${styles.tab} ${activeTab === "approved" ? styles.tabActive : ""}`}
-                    onClick={() => setActiveTab("approved")}
-                >
-                    Approved ({liveApproved.length})
-                </button>
-            </div>
-
-            <div className={styles.filterBar}>
-                {/* ... Search ... */}
-                <div className={styles.searchWrapper}>
-                    <MagnifyingGlassIcon className={styles.searchIcon} />
-                    <input
-                        type="text"
-                        placeholder="Search by name, org, or phone..."
-                        className={styles.searchInput}
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                    />
-                </div>
-                <div className={styles.stats}>
-                    <span>{filteredRequests.length} {activeTab === "pending" ? "Pending" : "Approved"}</span>
-                </div>
-            </div>
-
-
-            <div className={styles.requestGrid}>
-                {filteredRequests.length === 0 && (
-                    <div className={styles.emptyState}>
-                        <CheckBadgeIcon className={styles.emptyIcon} style={{ width: 48, height: 48 }} />
-                        <p>{searchTerm ? "No matching requests found." : activeTab === "pending" ? "No pending requests." : "No approved visitors yet."}</p>
+                <CardContent>
+                    <div className={styles.tabs}>
+                        <button
+                            className={`${styles.tab} ${activeTab === "pending" ? styles.tabActive : ""}`}
+                            onClick={() => setActiveTab("pending")}
+                        >
+                            Pending Requests ({livePending.length})
+                        </button>
+                        <button
+                            className={`${styles.tab} ${activeTab === "approved" ? styles.tabActive : ""}`}
+                            onClick={() => setActiveTab("approved")}
+                        >
+                            Approved ({liveApproved.length})
+                        </button>
+                        <button
+                            className={`${styles.tab} ${activeTab === "inout" ? styles.tabActive : ""}`}
+                            onClick={() => setActiveTab("inout")}
+                        >
+                            In / Out ({liveInOut.length})
+                        </button>
                     </div>
-                )}
 
-                {filteredRequests.map((req) => (
-                    <div key={req.id} className={`${styles.card} ${approvingId === req.id ? styles.cardApproving : ""}`} onClick={() => !approvingId && setSelectedVisitor(req)}>
-                        {/* Per-card loading overlay */}
-                        {approvingId === req.id && (
-                            <div className={styles.cardLoadingOverlay}>
-                                <ArrowPathIcon className="animate-spin" style={{ width: 28, height: 28 }} />
-                                <span>Sending approval email…</span>
-                            </div>
-                        )}
-                        <div className={styles.cardHeader}>
-                            <img
-                                src={req.photo_url || "/placeholder-user.png"}
-                                alt={req.name}
-                                className={styles.visitorPhoto}
+                    <div className={styles.filterBar}>
+                        {/* ... Search ... */}
+                        <div className={styles.searchWrapper}>
+                            <MagnifyingGlassIcon className={styles.searchIcon} />
+                            <input
+                                type="text"
+                                placeholder="Search by name, org, or phone..."
+                                className={styles.searchInput}
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
                             />
-                            <div className={styles.visitorInfo}>
-                                <h3>{req.name}</h3>
-                                <p className={styles.designation}>{req.designation}</p>
-                                <div className={styles.iconText}>
-                                    <BuildingOfficeIcon className={styles.miniIcon} />
-                                    <span>{req.organization}</span>
-                                </div>
-                            </div>
                         </div>
+                        <div className={styles.stats}>
+                            <span>{filteredRequests.length} {activeTab === "pending" ? "Pending" : activeTab === "approved" ? "Approved" : "In/Out"}</span>
+                        </div>
+                    </div>
 
-                        <div className={styles.cardBody}>
-                            <div className={styles.infoRow}>
-                                <PhoneIcon className={styles.miniIcon} />
-                                <span>{req.phone}</span>
-                            </div>
-                            <div className={styles.infoRow}>
-                                <strong>Purpose:</strong> <span className={styles.truncate}>{req.purpose}</span>
-                            </div>
-                            {activeTab === "approved" && req.visitor_uid && (
-                                <div className={styles.approvedInfo}>
-                                    <div className={styles.uidBadge}>
-                                        <CheckBadgeIcon style={{ width: 16, height: 16 }} />
-                                        <span>UID: {req.visitor_uid}</span>
-                                    </div>
-                                    <div className={styles.timestamp}>
-                                        Approved: {req.created_at ? new Date(req.created_at).toLocaleString('en-IN', {
-                                            dateStyle: 'medium',
-                                            timeStyle: 'short'
-                                        }) : 'N/A'}
+                    {/* ── In/Out Table View ── */}
+                    {activeTab === "inout" ? (
+                        <>
+                            {filteredRequests.length === 0 ? (
+                                <div className={styles.emptyState}>
+                                    <ClockIcon className={styles.emptyIcon} style={{ width: 48, height: 48 }} />
+                                    <p>{searchTerm ? "No matching visitors found." : "No check-in / check-out activity for today."}</p>
+                                </div>
+                            ) : (
+                                <div style={{ overflowX: "auto" }}>
+                                    <table className={styles.inOutTable}>
+                                        <thead>
+                                            <tr>
+                                                <th>Visitor</th>
+                                                <th>UID</th>
+                                                <th>Status</th>
+                                                <th>Check-In</th>
+                                                <th>Check-Out</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {filteredRequests.map((v) => (
+                                                <tr key={v.id} className={v.status === "checked_in" ? styles.rowActive : ""} onClick={() => setSelectedVisitor(v)} style={{ cursor: "pointer" }}>
+                                                    <td>
+                                                        <div style={{ display: "flex", flexDirection: "column" }}>
+                                                            <span style={{ fontWeight: 600 }}>{v.name}</span>
+                                                            {v.organization && <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>{v.organization}</span>}
+                                                        </div>
+                                                    </td>
+                                                    <td style={{ fontFamily: "'Courier New', monospace", fontSize: "0.85rem", fontWeight: 600, color: "var(--primary-color)" }}>{v.visitor_uid || "—"}</td>
+                                                    <td>
+                                                        <span className={`${styles.inOutStatusChip} ${v.status === "checked_in" ? styles.inOutStatusActive : styles.inOutStatusDone}`}>
+                                                            {v.status === "checked_in" ? "Active" : "Completed"}
+                                                        </span>
+                                                    </td>
+                                                    <td style={{ fontSize: "0.9rem" }}>
+                                                        {v.check_in_time
+                                                            ? new Date(v.check_in_time).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
+                                                            : "—"}
+                                                    </td>
+                                                    <td style={{ fontSize: "0.9rem" }}>
+                                                        {v.check_out_time
+                                                            ? new Date(v.check_out_time).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
+                                                            : "—"}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                    <div className={styles.inOutSummary}>
+                                        <span><strong>{activeCount}</strong> Active</span>
+                                        <span style={{ color: "var(--border-color)" }}>|</span>
+                                        <span><strong>{completedCount}</strong> Completed</span>
+                                        <span style={{ color: "var(--border-color)" }}>|</span>
+                                        <span><strong>{liveInOut.length}</strong> Total</span>
                                     </div>
                                 </div>
                             )}
-                        </div>
-
-                        {/* Card Footer Actions */}
-                        {activeTab === "pending" && (
-                            <div className={styles.cardFooter} onClick={(e) => e.stopPropagation()}>
-                                <form action={handleApprove} style={{ flex: 1 }}>
-                                    <input type="hidden" name="id" value={req.id} />
-                                    <button
-                                        type="submit"
-                                        className="btn btn-primary"
-                                        style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center", gap: "8px" }}
-                                        disabled={approvingId === req.id}
-                                    >
-                                        {approvingId === req.id ? (
-                                            <>
-                                                <ArrowPathIcon className="animate-spin" style={{ width: 18, height: 18 }} />
-                                                Sending Email…
-                                            </>
-                                        ) : "Approve"}
-                                    </button>
-                                </form>
-                                <button
-                                    type="button"
-                                    className="btn btn-outline"
-                                    style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center", gap: "6px", color: "#dc2626", borderColor: "#dc2626" }}
-                                    onClick={() => setRejectDialog({ open: true, visitorId: req.id, visitorName: req.name })}
-                                    disabled={!!approvingId}
-                                >
-                                    <XCircleIcon style={{ width: 18, height: 18 }} />
-                                    Reject
-                                </button>
-                            </div>
-                        )}
-
-                        {activeTab === "approved" && (
-                            <div className={styles.cardFooter}>
-                                <div className={styles.approvedBadge}>
-                                    <CheckBadgeIcon style={{ width: 18, height: 18 }} />
-                                    Approved
+                        </>
+                    ) : (
+                        <div className={styles.requestGrid}>
+                            {filteredRequests.length === 0 && (
+                                <div className={styles.emptyState}>
+                                    <CheckBadgeIcon className={styles.emptyIcon} style={{ width: 48, height: 48 }} />
+                                    <p>{searchTerm ? "No matching requests found." : activeTab === "pending" ? "No pending requests." : "No approved visitors yet."}</p>
                                 </div>
-                            </div>
-                        )}
-                    </div>
-                ))}
-            </div>            </CardContent>
+                            )}
+
+                            {filteredRequests.map((req) => (
+                                <div key={req.id} className={`${styles.card} ${approvingId === req.id ? styles.cardApproving : ""}`} onClick={() => !approvingId && setSelectedVisitor(req)}>
+                                    {/* Per-card loading overlay */}
+                                    {approvingId === req.id && (
+                                        <div className={styles.cardLoadingOverlay}>
+                                            <ArrowPathIcon className="animate-spin" style={{ width: 28, height: 28 }} />
+                                            <span>Sending approval email…</span>
+                                        </div>
+                                    )}
+                                    <div className={styles.cardHeader}>
+                                        <img
+                                            src={req.photo_url || "/placeholder-user.png"}
+                                            alt={req.name}
+                                            className={styles.visitorPhoto}
+                                        />
+                                        <div className={styles.visitorInfo}>
+                                            <h3>{req.name}</h3>
+                                            <p className={styles.designation}>{req.designation}</p>
+                                            <div className={styles.iconText}>
+                                                <BuildingOfficeIcon className={styles.miniIcon} />
+                                                <span>{req.organization}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className={styles.cardBody}>
+                                        <div className={styles.infoRow}>
+                                            <PhoneIcon className={styles.miniIcon} />
+                                            <span>{req.phone}</span>
+                                        </div>
+                                        <div className={styles.infoRow}>
+                                            <strong>Purpose:</strong> <span className={styles.truncate}>{req.purpose}</span>
+                                        </div>
+                                        {activeTab === "approved" && req.visitor_uid && (
+                                            <div className={styles.approvedInfo}>
+                                                <div className={styles.uidBadge}>
+                                                    <CheckBadgeIcon style={{ width: 16, height: 16 }} />
+                                                    <span>UID: {req.visitor_uid}</span>
+                                                </div>
+                                                <div className={styles.timestamp}>
+                                                    Approved: {req.created_at ? new Date(req.created_at).toLocaleString('en-IN', {
+                                                        dateStyle: 'medium',
+                                                        timeStyle: 'short'
+                                                    }) : 'N/A'}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Card Footer Actions */}
+                                    {activeTab === "pending" && (
+                                        <div className={styles.cardFooter} onClick={(e) => e.stopPropagation()}>
+                                            <form action={handleApprove} style={{ flex: 1 }}>
+                                                <input type="hidden" name="id" value={req.id} />
+                                                <button
+                                                    type="submit"
+                                                    className="btn btn-primary"
+                                                    style={{ width: "100%", display: "flex", justifyContent: "center", alignItems: "center", gap: "8px" }}
+                                                    disabled={approvingId === req.id}
+                                                >
+                                                    {approvingId === req.id ? (
+                                                        <>
+                                                            <ArrowPathIcon className="animate-spin" style={{ width: 18, height: 18 }} />
+                                                            Sending Email…
+                                                        </>
+                                                    ) : "Approve"}
+                                                </button>
+                                            </form>
+                                            <button
+                                                type="button"
+                                                className="btn btn-outline"
+                                                style={{ flex: 1, display: "flex", justifyContent: "center", alignItems: "center", gap: "6px", color: "#dc2626", borderColor: "#dc2626" }}
+                                                onClick={() => setRejectDialog({ open: true, visitorId: req.id, visitorName: req.name })}
+                                                disabled={!!approvingId}
+                                            >
+                                                <XCircleIcon style={{ width: 18, height: 18 }} />
+                                                Reject
+                                            </button>
+                                        </div>
+                                    )}
+
+                                    {activeTab === "approved" && (
+                                        <div className={styles.cardFooter}>
+                                            <div className={styles.approvedBadge}>
+                                                <CheckBadgeIcon style={{ width: 18, height: 18 }} />
+                                                Approved
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </CardContent>
             </Card>
             {/* Full Profile Dialog */}
             <CustomDialog

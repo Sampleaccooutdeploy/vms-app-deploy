@@ -89,6 +89,68 @@
     box-shadow: 0 0 0 3px rgba(255, 153, 51, 0.2);
 }
 
+/* ================================
+   AUTOCOMPLETE DROPDOWN
+   ================================ */
+
+.autocompleteWrapper {
+    position: relative;
+}
+
+.autocompleteDropdown {
+    position: absolute;
+    z-index: 50;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin: 4px 0 0;
+    padding: 4px 0;
+    list-style: none;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    max-height: 240px;
+    overflow-y: auto;
+    animation: dropdownSlide 0.15s ease;
+}
+
+@keyframes dropdownSlide {
+    from {
+        opacity: 0;
+        transform: translateY(-6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.autocompleteItem {
+    padding: 0.6rem 0.85rem;
+    font-size: 0.92rem;
+    color: var(--text-primary);
+    cursor: pointer;
+    transition: background 0.12s;
+    display: flex;
+    align-items: center;
+}
+
+.autocompleteItem:hover,
+.autocompleteItemActive {
+    background: rgba(255, 153, 51, 0.08);
+    color: var(--text-primary);
+}
+
+.autocompleteItemActive {
+    background: rgba(255, 153, 51, 0.14);
+}
+
+.autocompleteMatch {
+    color: var(--secondary-color);
+    font-weight: 700;
+}
+
 /* Phone Group */
 .phoneGroup {
     display: flex;
@@ -785,4 +847,69 @@
 :global(:root.dark) .inputVerified {
     border-color: #81C995 !important;
     /* Google light green for dark mode */
+}
+
+/* ================================
+   INPUT ERROR & HINT STYLES
+   ================================ */
+
+.inputWrapper {
+    position: relative;
+}
+
+.inputError {
+    border-color: #DC2626 !important;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12) !important;
+}
+
+.errorHint {
+    display: block;
+    font-size: 0.78rem;
+    color: #DC2626;
+    margin-top: 0.3rem;
+    font-weight: 500;
+    animation: hintSlideIn 0.2s ease;
+}
+
+@keyframes hintSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+:global(:root.dark) .inputError {
+    border-color: #F87171 !important;
+    box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.15) !important;
+}
+
+:global(:root.dark) .errorHint {
+    color: #FCA5A5;
+}
+
+/* ================================
+   AUTOCOMPLETE DARK MODE
+   ================================ */
+
+:global(:root.dark) .autocompleteDropdown {
+    background: var(--surface-color);
+    border-color: var(--border-color);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+:global(:root.dark) .autocompleteItem {
+    color: var(--text-primary);
+}
+
+:global(:root.dark) .autocompleteItem:hover,
+:global(:root.dark) .autocompleteItemActive {
+    background: rgba(255, 153, 51, 0.12);
+}
+
+:global(:root.dark) .autocompleteMatch {
+    color: var(--secondary-color);
 }

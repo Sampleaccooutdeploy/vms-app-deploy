@@ -63,6 +63,195 @@
     height: 16px;
 }
 
+.scannerChip.scannerActive .scannerIcon {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.scannerChip.scannerScanning {
+    color: #2563eb;
+    border-color: #bfdbfe;
+    background: #eff6ff;
+}
+
+.scannerChip.scannerDisconnected {
+    color: #dc2626;
+    border-color: #fecaca;
+    background: #fef2f2;
+}
+
+.scannerChip.scannerScanning .scannerIcon {
+    animation: scanPulse 0.3s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.6;
+    }
+}
+
+@keyframes scanPulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.2);
+    }
+}
+
+/* ===================================
+   PIN LOGIN SCREEN
+   =================================== */
+.loginWrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 70vh;
+}
+
+.loginCard {
+    width: 100%;
+    max-width: 400px;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 2.5rem 2rem;
+    text-align: center;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+}
+
+.loginIconWrap {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color), #1a4a7a);
+    margin-bottom: 1.25rem;
+}
+
+.loginIcon {
+    width: 32px;
+    height: 32px;
+    color: #fff;
+}
+
+.loginTitle {
+    font-size: 1.4rem;
+    font-weight: 700;
+    margin: 0 0 0.3rem;
+    letter-spacing: -0.02em;
+}
+
+.loginSubtitle {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    margin: 0 0 1.75rem;
+}
+
+.loginForm {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+}
+
+.pinInputGroup {
+    display: flex;
+    align-items: center;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--bg-color);
+    transition: border-color 0.2s;
+}
+
+.pinInputGroup:focus-within {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(0, 51, 102, 0.08);
+}
+
+.pinFieldIcon {
+    width: 20px;
+    height: 20px;
+    margin-left: 0.85rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.pinInput {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    padding: 0.85rem 0.75rem;
+    font-size: 1rem;
+    letter-spacing: 0.15em;
+    color: var(--text-primary);
+}
+
+.pinInput::placeholder {
+    letter-spacing: 0;
+    color: var(--text-muted);
+}
+
+.pinSubmitBtn {
+    padding: 0.85rem;
+    background: var(--primary-color);
+    color: #fff;
+    border: none;
+    border-radius: var(--radius-md);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.pinSubmitBtn:hover:not(:disabled) {
+    opacity: 0.9;
+}
+
+.pinSubmitBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Logout button */
+.logoutBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--surface-color);
+    color: var(--text-muted);
+    cursor: pointer;
+    transition: all 0.2s;
+    margin-left: 0.6rem;
+}
+
+.logoutBtn:hover {
+    border-color: #dc2626;
+    color: #dc2626;
+    background: rgba(220, 38, 38, 0.05);
+}
+
+.logoutIcon {
+    width: 16px;
+    height: 16px;
+}
+
 /* Dashboard */
 .dashboard {
     max-width: 720px;
@@ -100,6 +289,22 @@
     margin-left: 1rem;
     color: var(--text-muted);
     flex-shrink: 0;
+}
+
+.uidPrefix {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.3rem 0.6rem;
+    margin-left: 0.5rem;
+    background: var(--primary-color);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    border-radius: 4px;
+    flex-shrink: 0;
+    user-select: none;
+    line-height: 1;
 }
 
 .searchInput {
@@ -261,8 +466,15 @@
     font-size: 1.35rem;
     font-weight: 700;
     color: var(--text-primary);
-    margin: 0 0 1rem;
+    margin: 0 0 0.25rem;
     letter-spacing: -0.01em;
+}
+
+.visitorDesignation {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin: 0 0 1rem;
 }
 
 .detailGrid {
@@ -291,6 +503,11 @@
     color: var(--text-primary);
 }
 
+.idProofValue {
+    font-family: 'Courier New', Courier, monospace;
+    letter-spacing: 0.08em;
+}
+
 /* Timestamps */
 .timestamps {
     display: flex;
@@ -307,7 +524,7 @@
     background: var(--surface-color);
 }
 
-.timeItem + .timeItem {
+.timeItem+.timeItem {
     border-left: 1px solid var(--border-color);
 }
 
@@ -514,7 +731,7 @@
         flex-direction: column;
     }
 
-    .timeItem + .timeItem {
+    .timeItem+.timeItem {
         border-left: none;
         border-top: 1px solid var(--border-color);
     }
@@ -579,6 +796,18 @@
     border-color: rgba(22, 163, 74, 0.3);
 }
 
+:global(:root.dark) .scannerChip.scannerScanning {
+    background: rgba(37, 99, 235, 0.12);
+    color: #93c5fd;
+    border-color: rgba(37, 99, 235, 0.3);
+}
+
+:global(:root.dark) .scannerChip.scannerDisconnected {
+    background: rgba(220, 38, 38, 0.12);
+    color: #fca5a5;
+    border-color: rgba(220, 38, 38, 0.3);
+}
+
 /* Search */
 :global(:root.dark) .searchInputGroup {
     background: var(--surface-color);
@@ -591,6 +820,11 @@
 }
 
 :global(:root.dark) .searchBtn {
+    background: var(--secondary-color);
+    color: #1a1a1a;
+}
+
+:global(:root.dark) .uidPrefix {
     background: var(--secondary-color);
     color: #1a1a1a;
 }
@@ -694,4 +928,347 @@
 
 :global(:root.dark) .btnCheckOut:hover:not(:disabled) {
     background: #dc2626;
+}
+
+/* ===================================
+   DAILY ACTIVITY TABLE
+   =================================== */
+.dailySection {
+    margin-top: 2.5rem;
+    border-top: 2px solid var(--border-color);
+    padding-top: 2rem;
+}
+
+.dailySectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+}
+
+.dailyTitleRow {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.dailyTitleIcon {
+    width: 24px;
+    height: 24px;
+    color: var(--primary-color);
+    flex-shrink: 0;
+}
+
+.dailyTitle {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+
+.dailySubtitle {
+    margin: 0;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    font-weight: 400;
+}
+
+.refreshBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 0.85rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--surface-color);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.refreshBtn:hover:not(:disabled) {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+    background: rgba(0, 51, 102, 0.04);
+}
+
+.refreshBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.refreshIcon {
+    width: 16px;
+    height: 16px;
+}
+
+.refreshSpin {
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
+
+/* Empty state */
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5rem 1rem;
+    text-align: center;
+    color: var(--text-muted);
+    background: var(--surface-color);
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-lg);
+}
+
+.emptyIcon {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 0.5rem;
+    opacity: 0.5;
+}
+
+.emptyState p {
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+/* Table wrapper */
+.tableWrapper {
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    background: var(--surface-color);
+}
+
+.activityTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+}
+
+.activityTable thead {
+    background: var(--primary-color);
+    color: #fff;
+}
+
+.activityTable th {
+    padding: 0.7rem 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.78rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+}
+
+.activityTable th:first-child {
+    border-radius: var(--radius-lg) 0 0 0;
+}
+
+.activityTable th:last-child {
+    border-radius: 0 var(--radius-lg) 0 0;
+}
+
+.activityTable td {
+    padding: 0.65rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+    vertical-align: middle;
+}
+
+.activityTable tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.activityTable tbody tr:hover {
+    background: rgba(0, 51, 102, 0.03);
+}
+
+/* Row variants */
+.rowActive {
+    border-left: 3px solid #16a34a;
+}
+
+.rowCompleted {
+    border-left: 3px solid var(--border-color);
+    opacity: 0.85;
+}
+
+/* Cell styles */
+.cellVisitor {
+    display: flex;
+    flex-direction: column;
+}
+
+.cellName {
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.3;
+}
+
+.cellOrg {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+}
+
+.cellUid {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--primary-color);
+    letter-spacing: 0.02em;
+}
+
+.cellTime {
+    font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+    font-size: 0.84rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+/* Table status chips */
+.tableStatusChip {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.65rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.tableStatusActive {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.tableStatusDone {
+    background: #f1f5f9;
+    color: #64748b;
+}
+
+/* Summary footer */
+.dailySummary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin-top: 0.75rem;
+    border-radius: var(--radius-md);
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.summaryItem strong {
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-right: 0.2rem;
+}
+
+.summaryDivider {
+    color: var(--border-color);
+}
+
+/* ===================================
+   DAILY TABLE — MOBILE
+   =================================== */
+@media (max-width: 640px) {
+    .dailySectionHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .activityTable th,
+    .activityTable td {
+        padding: 0.5rem 0.6rem;
+        font-size: 0.78rem;
+    }
+
+    .activityTable th {
+        font-size: 0.7rem;
+    }
+
+    .cellName {
+        font-size: 0.82rem;
+    }
+
+    .cellUid {
+        font-size: 0.72rem;
+    }
+}
+
+/* ===================================
+   DAILY TABLE — DARK MODE
+   =================================== */
+:global(:root.dark) .dailySection {
+    border-color: var(--border-color);
+}
+
+:global(:root.dark) .activityTable thead {
+    background: #1e3a5f;
+}
+
+:global(:root.dark) .activityTable tbody tr:hover {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+:global(:root.dark) .rowActive {
+    border-left-color: #4ade80;
+}
+
+:global(:root.dark) .rowCompleted {
+    opacity: 0.75;
+}
+
+:global(:root.dark) .tableStatusActive {
+    background: rgba(22, 163, 74, 0.15);
+    color: #86efac;
+}
+
+:global(:root.dark) .tableStatusDone {
+    background: rgba(113, 128, 150, 0.15);
+    color: #a0aec0;
+}
+
+:global(:root.dark) .emptyState {
+    background: var(--surface-color);
+    border-color: var(--border-color);
+}
+
+:global(:root.dark) .refreshBtn:hover:not(:disabled) {
+    background: rgba(255, 153, 51, 0.08);
+    border-color: var(--secondary-color);
+    color: var(--secondary-color);
+}
+
+/* PIN Login — Dark mode */
+:global(:root.dark) .loginCard {
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+}
+
+:global(:root.dark) .loginIconWrap {
+    background: linear-gradient(135deg, #1e3a5f, #FF9933);
+}
+
+:global(:root.dark) .pinInputGroup:focus-within {
+    box-shadow: 0 0 0 3px rgba(255, 153, 51, 0.15);
+    border-color: var(--secondary-color);
+}
+
+:global(:root.dark) .pinSubmitBtn {
+    background: #1e3a5f;
+}
+
+:global(:root.dark) .logoutBtn:hover {
+    background: rgba(220, 38, 38, 0.1);
 }
